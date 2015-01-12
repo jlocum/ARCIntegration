@@ -15,6 +15,8 @@ import com.nxttxn.vramel.builder.FlowBuilder;
 import com.splitsecnd.integration.atp.model.EmergencyEvent;
 
 public class ECall extends FlowBuilder {
+	
+    public static final String PROJECT_CODE = "{{project_code}}";
 
 	@Override
 	public void configure() throws Exception {
@@ -47,7 +49,7 @@ public class ECall extends FlowBuilder {
 			JsonObject deviceEvent = new JsonObject(exchange.getIn().getBody(String.class));
 			EmergencyEvent ATPevent = new EmergencyEvent();
 			ATPevent.getService().setAssistanceType("ECALL");
-			ATPevent.getService().setProjectCode("{{project_code}}");
+			ATPevent.getService().setProjectCode(PROJECT_CODE);
 			//need to get this from customer...
 			ATPevent.getService().setServiceIdentifier(deviceEvent.getObject("vehicle").getObject("owner").getString("serviceHomeId"));
 			ATPevent.getEvent().setActivationMethod("Manual");
