@@ -49,7 +49,7 @@ public class ECall extends FlowBuilder {
 			ATPevent.getService().setAssistanceType("ECALL");
 			ATPevent.getService().setProjectCode("{{project_code}}");
 			//need to get this from customer...
-			ATPevent.getService().setServiceIdentifier(deviceEvent.getObject("owner").getString("serviceHomeId"));
+			ATPevent.getService().setServiceIdentifier(deviceEvent.getObject("vehicle").getObject("owner").getString("serviceHomeId"));
 			ATPevent.getEvent().setActivationMethod("Manual");
 			ATPevent.getEvent().setCallerId(deviceEvent.getString("phoneNumber"));
 			ATPevent.getEvent().getCaller().setCallbackPhoneNumber("");
