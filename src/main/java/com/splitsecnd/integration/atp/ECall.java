@@ -15,23 +15,15 @@ import com.nxttxn.vramel.builder.FlowBuilder;
 import com.splitsecnd.integration.atp.model.EmergencyEvent;
 
 public class ECall extends FlowBuilder {
-	
-    protected static final String PROJECT_CODE = "{{project_code}}";
-    protected static final JsonObject httpConfig = new JsonObject()
-														.putString("host", "{{host}}")
-														.putNumber("port", 443)
-														.putBoolean("ssl", true)
-														.putString("username","{{username}}")
-														.putString("password", "{{password}}");
 
 	@Override
 	public void configure() throws Exception {
         fromF("vertxQueue:ATPQueue")
         .log(LoggingLevel.DEBUG, ECall.class.getName(), "[ECall]: ${body}")
         .onException(Exception.class).handled(true).log(LoggingLevel.ERROR, ECall.class.getName(), "Error").end()
-        .process(new ECallMessageTransformer())
+        .process(new ECallMessageTransformer(getConfigObject("project-code").toString()))
         .toF("rest:POST:{{requestUri}}", 
-        	 httpConfig
+        	 getConfigObject("http-connection-config")
         ).process(new Processor() {
 
 			@Override
@@ -45,12 +37,18 @@ public class ECall extends FlowBuilder {
 
 	protected class ECallMessageTransformer implements Processor {
 
+		private String projectCode;
+		
+		public ECallMessageTransformer(String projectCode) {
+			this.projectCode = projectCode;
+		}
+		
 		@Override
 		public void process(Exchange exchange) throws Exception {
 			JsonObject deviceEvent = new JsonObject(exchange.getIn().getBody(String.class));
 			EmergencyEvent ATPevent = new EmergencyEvent();
 			ATPevent.getService().setAssistanceType("ECALL");
-			ATPevent.getService().setProjectCode(PROJECT_CODE);
+			ATPevent.getService().setProjectCode(projectCode);
 			//need to get this from customer...
 			ATPevent.getService().setServiceIdentifier(deviceEvent.getObject("vehicle").getObject("owner").getString("serviceHomeId"));
 			ATPevent.getEvent().setActivationMethod("Manual");
