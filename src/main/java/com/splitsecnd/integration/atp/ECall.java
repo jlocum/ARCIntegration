@@ -16,7 +16,13 @@ import com.splitsecnd.integration.atp.model.EmergencyEvent;
 
 public class ECall extends FlowBuilder {
 	
-    public static final String PROJECT_CODE = "{{project_code}}";
+    protected static final String PROJECT_CODE = "{{project_code}}";
+    protected static final JsonObject httpConfig = new JsonObject()
+														.putString("host", "{{host}}")
+														.putNumber("port", 443)
+														.putBoolean("ssl", true)
+														.putString("username","{{username}}")
+														.putString("password", "{{password}}");
 
 	@Override
 	public void configure() throws Exception {
@@ -25,12 +31,7 @@ public class ECall extends FlowBuilder {
         .onException(Exception.class).handled(true).log(LoggingLevel.ERROR, ECall.class.getName(), "Error").end()
         .process(new ECallMessageTransformer())
         .toF("rest:POST:{{requestUri}}", 
-        	 new JsonObject()
-        			.putString("host", "{{host}}")
-        			.putNumber("port", 443)
-        			.putBoolean("ssl", true)
-        			.putString("username","{{username}}")
-        			.putString("password", "{{password}}")
+        	 httpConfig
         ).process(new Processor() {
 
 			@Override
