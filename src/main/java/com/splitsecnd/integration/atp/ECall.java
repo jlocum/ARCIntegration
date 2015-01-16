@@ -24,13 +24,7 @@ public class ECall extends FlowBuilder {
         .process(new ECallMessageTransformer(getResolvedConfig().getString("project-code")))
         .toF("rest:POST:{{requestUri}}", 
         	 getConfigObject("http-connection-config")
-        ).process(new Processor() {
-
-			@Override
-			public void process(Exchange arg0) throws Exception {
-				System.out.println(arg0.getIn().getBody(String.class));
-				
-			}});
+        ).toF("vertx:splitsecnd.dbUpdater");
         		
 	}
 
