@@ -21,7 +21,7 @@ public class ECall extends FlowBuilder {
         fromF("vertxQueue:ATPQueue")
         .log(LoggingLevel.DEBUG, ECall.class.getName(), "[ECall]: ${body}")
         .onException(Exception.class).handled(true).log(LoggingLevel.ERROR, ECall.class.getName(), "Error").end()
-        .process(new ECallMessageTransformer(getConfigObject("project-code").toString()))
+        .process(new ECallMessageTransformer(getResolvedConfig().getString("project-code")))
         .toF("rest:POST:{{requestUri}}", 
         	 getConfigObject("http-connection-config")
         ).process(new Processor() {
