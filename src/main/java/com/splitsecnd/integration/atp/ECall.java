@@ -22,9 +22,11 @@ public class ECall extends FlowBuilder {
         .log(LoggingLevel.DEBUG, ECall.class.getName(), "[ECall]: ${body}")
         .onException(Exception.class).handled(true).log(LoggingLevel.ERROR, ECall.class.getName(), "Error").end()
         .process(new ECallMessageTransformer(getResolvedConfig().getString("project-code")))
+        .log("DeviceId1: ${header.deviceId}") 
         .toF("rest:POST:{{requestUri}}", 
         	 getConfigObject("http-connection-config")
-        ).toF("vertx:splitsecnd.dbUpdater");
+        ).log("DeviceId2: ${header.deviceId}") 
+        .toF("vertx:splitsecnd.dbUpdater");
         		
 	}
 
@@ -60,6 +62,7 @@ public class ECall extends FlowBuilder {
 			ATPevent.getEvent().getVehicle().getVin().setVis(deviceEvent.getObject("vehicle").getString("VIN").substring(9));
 			Message out = exchange.getIn().copy();
 	        out.setBody(new Gson().toJson(ATPevent));
+	        out.setHeader("deviceId", deviceEvent.getString("ein"));
 	        exchange.setOut(out);			
 		}
 		
