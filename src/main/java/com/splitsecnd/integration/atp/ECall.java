@@ -125,9 +125,7 @@ public class ECall extends FlowBuilder {
         fromF("direct:getOwner")
         .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Owner"))
         .routingSlip(simple("rest:GET:" + GET_OWNER_FOR_DEVICE + "?" + USERGRID_CONFIG))
-        .process(new SaveMotorClubUUID());
-          		
-        fromF("direct:getMotorClub")
+        .process(new SaveMotorClubUUID())
         .setProperty("saveThisBody", body())
         .setBody(constant(new byte[] {}))
         .routingSlip(simple("rest:GET:" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG))
