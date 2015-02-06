@@ -39,9 +39,13 @@ public class ECall extends FlowBuilder {
 			exchange.getOut().setBody(new byte[] {});
 			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
 			exchange.getOut().setHeader("subscriptionUUID", subscription.getString("uuid"));
+			exchange.getOut().setHeader("vehicleUUID", subscription.getString("vehicleId"));
+			if (StringUtils.isEmpty(subscription.getString("vehicleId"))) {
+				throw new Exception("No vehicleId found for " + exchange.getIn().getHeader("deviceId"));
+			}
 			exchange.getOut().removeHeader(Exchange.HTTP_QUERY);
 			
-			logger.info("Setting subscriptionUUID header: {}", subscription.getString("uuid"));
+			logger.info("Setting headers: subscriptionUUID - {} , vehicleUUID - {}", subscription.getString("uuid"),subscription.getString("vehicleId"));
 
 		}
 	}
@@ -67,7 +71,7 @@ public class ECall extends FlowBuilder {
 	private static String USERGRID_CONFIG = "host={{usergrid.host}}&port={{usergrid.port}}&ssl={{usergrid.ssl}}";
 	private static String USERGRID_PATH = "/{{usergrid.org}}/{{usergrid.app}}";
 	private static String SUBSCRIPTIONS = USERGRID_PATH + "/{{subscriptions}}";
-	private static String GET_VEHICLE_FOR_DEVICE = SUBSCRIPTIONS + "/${header.subscriptionUUID}/{{subscriptionVehicleConnection}}";
+	private static String GET_VEHICLE_FOR_DEVICE = USERGRID_PATH + "/vehicles/${header.vehicleUUID}";
 	private static String GET_OWNER_FOR_DEVICE = SUBSCRIPTIONS + "/${header.subscriptionUUID}/{{subscriptionUserConnection}}";
 
 	@Override
