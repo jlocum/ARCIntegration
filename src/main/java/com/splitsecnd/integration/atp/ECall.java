@@ -36,7 +36,8 @@ public class ECall extends FlowBuilder {
 		@Override
 		public void process(Exchange exchange) throws Exception {
 			JsonObject deviceOwner = getJson(exchange.getIn().getBody(byte[].class));
-			exchange.setProperty("motorclubUUID", deviceOwner.getString("motorClubId"));
+			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
+			exchange.getOut().setHeader("motorclubUUID", deviceOwner.getString("motorClubId"));
 			exchange.getOut().setBody(exchange.getIn().getBody());
 		}
 
@@ -92,7 +93,7 @@ public class ECall extends FlowBuilder {
 	private static String SUBSCRIPTIONS = USERGRID_PATH + "/{{subscriptions}}";
 	private static String GET_VEHICLE_FOR_DEVICE = USERGRID_PATH + "/vehicles/${header.vehicleUUID}";
 	private static String GET_OWNER_FOR_DEVICE = SUBSCRIPTIONS + "/${header.subscriptionUUID}/{{subscriptionUserConnection}}";
-	private static String GET_MOTORCLUB_FOR_OWNER = USERGRID_PATH + "motorclubs/${header.motorclubUUID}";
+	private static String GET_MOTORCLUB_FOR_OWNER = USERGRID_PATH + "/motorclubs/${header.motorclubUUID}";
 
 	@Override
 	public void configure() throws Exception {
