@@ -29,7 +29,7 @@ public class ECall extends FlowBuilder {
 		public void process(Exchange exchange) throws Exception {
 			JsonObject usergridSubscription = new JsonObject( exchange.getIn().getBody(String.class));
 			JsonArray subscriptionsFound = usergridSubscription.getArray("entities");
-			if (subscriptionsFound.size() > 0) {
+			if (subscriptionsFound.size() > 1) {
 				throw new Exception("More than one subscription found for " + exchange.getIn().getHeader("deviceId"));
 			}
 			if (subscriptionsFound.size() == 0) {
