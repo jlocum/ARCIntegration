@@ -41,8 +41,7 @@ public class ECall extends FlowBuilder {
 		}
 
 	}
-
-
+	
 	public class RetrieveSubscriptionUUID implements Processor {
 
 		@Override
@@ -129,6 +128,7 @@ public class ECall extends FlowBuilder {
           		
         fromF("direct:getMotorClub")
         .setProperty("saveThisBody", body())
+        .setBody(constant(new byte[] {}))
         .routingSlip(simple("rest:GET:" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG))
         .process(new SaveMotorClubJson())
         .setBody(property("saveThisBody"));      
