@@ -11,18 +11,38 @@ import org.vertx.java.core.json.JsonObject;
 
 import com.google.gson.Gson;
 import com.nxttxn.vramel.Exchange;
-import com.nxttxn.vramel.Expression;
 import com.nxttxn.vramel.LoggingLevel;
 import com.nxttxn.vramel.Message;
 import com.nxttxn.vramel.Processor;
 import com.nxttxn.vramel.builder.FlowBuilder;
 import com.nxttxn.vramel.processor.aggregate.KeyedAggregation;
 import com.nxttxn.vramel.processor.aggregate.KeyedBodyAggregationStrategy;
-import com.nxttxn.vramel.processor.aggregate.KeyedExchangeAggregationStrategy;
 import com.splitsecnd.integration.atp.model.EmergencyEvent;
 
 public class ECall extends FlowBuilder {
 	
+	public class SaveMotorClubJson implements Processor {
+
+		@Override
+		public void process(Exchange exchange) throws Exception {
+			JsonObject motorClub = getJson(exchange.getIn().getBody(byte[].class));
+			exchange.setProperty("motorclub", motorClub);
+		}
+	}
+
+
+	public class SaveMotorClubUUID implements Processor {
+
+		@Override
+		public void process(Exchange exchange) throws Exception {
+			JsonObject deviceOwner = getJson(exchange.getIn().getBody(byte[].class));
+			exchange.setProperty("motorclubUUID", deviceOwner.getString("motorClubId"));
+			exchange.getOut().setBody(exchange.getIn().getBody());
+		}
+
+	}
+
+
 	public class RetrieveSubscriptionUUID implements Processor {
 
 		@Override
@@ -73,6 +93,7 @@ public class ECall extends FlowBuilder {
 	private static String SUBSCRIPTIONS = USERGRID_PATH + "/{{subscriptions}}";
 	private static String GET_VEHICLE_FOR_DEVICE = USERGRID_PATH + "/vehicles/${header.vehicleUUID}";
 	private static String GET_OWNER_FOR_DEVICE = SUBSCRIPTIONS + "/${header.subscriptionUUID}/{{subscriptionUserConnection}}";
+	private static String GET_MOTORCLUB_FOR_OWNER = USERGRID_PATH + "motorclubs/${header.motorclubUUID}";
 
 	@Override
 	public void configure() throws Exception {
@@ -86,6 +107,7 @@ public class ECall extends FlowBuilder {
         .toF("direct:getVehicle")
         .toF("direct:getOwner")
         .end()
+        .toF("direct:getMotorClub")
         .process(new ECallMessageTransformer(getResolvedConfig().getString("project-code")))
         .toF("rest:POST:{{requestUri}}", 
         	 getConfigObject("http-connection-config")
@@ -102,8 +124,14 @@ public class ECall extends FlowBuilder {
         
         fromF("direct:getOwner")
         .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Owner"))
-        .routingSlip(simple("rest:GET:" + GET_OWNER_FOR_DEVICE + "?" + USERGRID_CONFIG));
+        .routingSlip(simple("rest:GET:" + GET_OWNER_FOR_DEVICE + "?" + USERGRID_CONFIG))
+        .process(new SaveMotorClubUUID());
           		
+        fromF("direct:getMotorClub")
+        .setProperty("saveThisBody", body())
+        .routingSlip(simple("rest:GET:" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG))
+        .process(new SaveMotorClubJson())
+        .setBody(property("saveThisBody"));      
 	}
 
 
@@ -119,14 +147,14 @@ public class ECall extends FlowBuilder {
 		public void process(Exchange exchange) throws Exception {
 			KeyedAggregation results = exchange.getIn().getBody(KeyedAggregation.class);
 			JsonObject deviceEvent = exchange.getProperty("Event",JsonObject.class);
+			JsonObject motorClub = exchange.getProperty("motorclub",JsonObject.class);
 			JsonObject deviceOwner = getJson((byte[]) results.get("Owner"));
-			
 			JsonObject vehicle = getJson((byte[])results.get("Vehicle"));
 			EmergencyEvent ATPevent = new EmergencyEvent();
 			ATPevent.getService().setAssistanceType("ECALL");
 			ATPevent.getService().setProjectCode(projectCode);
 			//need to get this from customer...
-			ATPevent.getService().setServiceIdentifier(deviceOwner.getString("serviceHomeId"));
+			ATPevent.getService().setServiceIdentifier(StringUtils.defaultIfEmpty(motorClub.getString("serviceHomeId"),"GB"));
 			ATPevent.getEvent().setActivationMethod("Manual");
 			ATPevent.getEvent().setCallerId(deviceEvent.getString("phoneNumber"));
 			ATPevent.getEvent().getCaller().setCallbackPhoneNumber("");
@@ -148,16 +176,16 @@ public class ECall extends FlowBuilder {
 	        out.removeHeader("Authorization");
 	        exchange.setOut(out);			
 		}
+		
+	}
 
-		private JsonObject getJson(byte[] json) throws Exception {
-			JsonObject j = new JsonObject(new String(json));
-			JsonArray entities = j.getArray("entities");
-			if (entities.size() == 0) {
-				throw new Exception("No entities for supplied json: " + j.toString());
-			}
-			
-			return entities.get(0);
+	private JsonObject getJson(byte[] json) throws Exception {
+		JsonObject j = new JsonObject(new String(json));
+		JsonArray entities = j.getArray("entities");
+		if (entities.size() == 0) {
+			throw new Exception("No entities for supplied json: " + j.toString());
 		}
 		
+		return entities.get(0);
 	}
 }
