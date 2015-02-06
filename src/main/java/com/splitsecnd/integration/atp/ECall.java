@@ -119,8 +119,9 @@ public class ECall extends FlowBuilder {
 		public void process(Exchange exchange) throws Exception {
 			KeyedAggregation results = exchange.getIn().getBody(KeyedAggregation.class);
 			JsonObject deviceEvent = exchange.getProperty("Event",JsonObject.class);
-			JsonObject deviceOwner = new JsonObject(new String((byte[])results.get("Owner")));
-			JsonObject vehicle = new JsonObject(new String((byte[])results.get("Vehicle")));
+			JsonObject deviceOwner = getJson((byte[]) results.get("Owner"));
+			
+			JsonObject vehicle = getJson((byte[])results.get("Vehicle"));
 			EmergencyEvent ATPevent = new EmergencyEvent();
 			ATPevent.getService().setAssistanceType("ECALL");
 			ATPevent.getService().setProjectCode(projectCode);
@@ -146,6 +147,16 @@ public class ECall extends FlowBuilder {
 	        out.setHeader("ein", deviceEvent.getString("ein"));
 	        out.removeHeader("Authorization");
 	        exchange.setOut(out);			
+		}
+
+		private JsonObject getJson(byte[] json) throws Exception {
+			JsonObject j = new JsonObject(new String(json));
+			JsonArray entities = j.getArray("entities");
+			if (entities.size() == 0) {
+				throw new Exception("No entities for supplied json: " + j.toString());
+			}
+			
+			return entities.get(0);
 		}
 		
 	}
