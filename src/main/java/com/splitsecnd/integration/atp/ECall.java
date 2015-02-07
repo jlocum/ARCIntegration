@@ -15,6 +15,8 @@ import com.nxttxn.vramel.LoggingLevel;
 import com.nxttxn.vramel.Message;
 import com.nxttxn.vramel.Processor;
 import com.nxttxn.vramel.builder.FlowBuilder;
+import com.nxttxn.vramel.processor.aggregate.AbstractKeyedAggregationStrategy;
+import com.nxttxn.vramel.processor.aggregate.AggregationStrategy;
 import com.nxttxn.vramel.processor.aggregate.KeyedAggregation;
 import com.nxttxn.vramel.processor.aggregate.KeyedBodyAggregationStrategy;
 import com.splitsecnd.integration.atp.model.EmergencyEvent;
@@ -107,11 +109,6 @@ public class ECall extends FlowBuilder {
         .toF("direct:getVehicle")
         .toF("direct:getOwner")
         .end()
-         .setProperty("saveThisBody", body())
-        .setBody(constant(new byte[] {}))
-        .routingSlip(simple("rest:GET:" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG))
-        .process(new SaveMotorClubJson())
-        .setBody(property("saveThisBody"))     
         .process(new ECallMessageTransformer(getResolvedConfig().getString("project-code")))
         .toF("rest:POST:{{requestUri}}", 
         	 getConfigObject("http-connection-config")
@@ -129,7 +126,16 @@ public class ECall extends FlowBuilder {
         fromF("direct:getOwner")
         .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Owner"))
         .routingSlip(simple("rest:GET:" + GET_OWNER_FOR_DEVICE + "?" + USERGRID_CONFIG))
-        .process(new SaveMotorClubUUID());
+        .process(new SaveMotorClubUUID())
+        .enrich(simple("rest:GET:" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG).getText(), new AggregationStrategy() {
+
+			@Override
+			public Exchange aggregate(Exchange oldExchange, Exchange newExchange) {
+				oldExchange.setProperty("motorClub", new JsonObject(newExchange.getIn().getBody(String.class)));
+				
+				return oldExchange;
+			}
+        });
 	}
 
 
