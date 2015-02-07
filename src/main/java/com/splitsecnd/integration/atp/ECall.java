@@ -158,8 +158,10 @@ public class ECall extends FlowBuilder {
 		public void process(Exchange exchange) throws Exception {
 			KeyedAggregation results = exchange.getIn().getBody(KeyedAggregation.class);
 			JsonObject deviceEvent = exchange.getProperty("Event",JsonObject.class);
-			JsonObject motorClub = exchange.getProperty("motorclub",JsonObject.class);
-			JsonObject deviceOwner = getJson((byte[]) results.get("Owner"));
+			JsonObject motorClub = results.get("Owner");
+			motorClub = motorClub.getObject("MotorClub");
+			JsonObject deviceOwner = results.get("Owner");
+			deviceOwner = deviceOwner.getObject("Owner");
 			JsonObject vehicle = getJson((byte[])results.get("Vehicle"));
 			EmergencyEvent ATPevent = new EmergencyEvent();
 			ATPevent.getService().setAssistanceType("ECALL");
