@@ -75,7 +75,7 @@ public class ECall extends FlowBuilder {
 			exchange.getOut().setHeader("subscriptionUUID", subscription.getString("uuid"));
 			exchange.getOut().setHeader("vehicleUUID", subscription.getString("vehicleId"));
 			if (StringUtils.isEmpty(subscription.getString("vehicleId"))) {
-				throw new Exception("No vehicleId found for " + exchange.getIn().getHeader("deviceId"));
+				logger.warn("No vehicleId found for {}", exchange.getIn().getHeader("deviceId"));
 			}
 			exchange.getOut().removeHeader(Exchange.HTTP_QUERY);
 			
@@ -133,7 +133,12 @@ public class ECall extends FlowBuilder {
         
         fromF("direct:getVehicle")
         .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Vehicle"))
-        .routingSlip(simple("rest:GET:" + GET_VEHICLE_FOR_DEVICE + "?" + USERGRID_CONFIG));
+        .choice()
+        .when().simple("${header.vehicleUUID != null")
+        	.routingSlip(simple("rest:GET:" + GET_VEHICLE_FOR_DEVICE + "?" + USERGRID_CONFIG)).end()
+        .otherwise()
+        	.setBody(constant(new byte[]{}))
+        .endChoice();
         
         fromF("direct:getOwner")
         .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Owner"))
@@ -158,11 +163,29 @@ public class ECall extends FlowBuilder {
 		public void process(Exchange exchange) throws Exception {
 			KeyedAggregation results = exchange.getIn().getBody(KeyedAggregation.class);
 			JsonObject deviceEvent = exchange.getProperty("Event",JsonObject.class);
-			JsonObject motorClub = results.get("Owner");
-			motorClub = motorClub.getObject("MotorClub");
-			JsonObject deviceOwner = results.get("Owner");
-			deviceOwner = deviceOwner.getObject("Owner");
-			JsonObject vehicle = getJson((byte[])results.get("Vehicle"));
+			JsonObject motorClub = null;
+			try {
+				motorClub = results.get("Owner");
+				motorClub = motorClub.getObject("MotorClub");
+			} catch( Exception e ) {
+				logger.warn("no motorclub found - must default", e);
+				motorClub = new JsonObject();				
+			}
+			JsonObject deviceOwner = null;
+			try {
+				deviceOwner = results.get("Owner");
+				deviceOwner = deviceOwner.getObject("Owner");
+			} catch( Exception e ) {
+				logger.warn("no owner found - must default", e);
+				deviceOwner = new JsonObject();				
+			}
+			JsonObject vehicle = null;
+			try {
+				getJson((byte[])results.get("Vehicle"));
+			} catch( Exception e ) {
+				logger.warn("no vehicle found - must default", e);
+				vehicle = new JsonObject();
+			}
 			EmergencyEvent ATPevent = new EmergencyEvent();
 			ATPevent.getService().setAssistanceType("ECALL");
 			ATPevent.getService().setProjectCode(projectCode);
@@ -171,16 +194,16 @@ public class ECall extends FlowBuilder {
 			ATPevent.getEvent().setActivationMethod("Manual");
 			ATPevent.getEvent().setCallerId(deviceEvent.getString("phoneNumber"));
 			ATPevent.getEvent().getCaller().setCallbackPhoneNumber("");
-			ATPevent.getEvent().getCaller().setFirstName(deviceOwner.getString("firstName"));
-			ATPevent.getEvent().getCaller().setLastName(deviceOwner.getString("lastName"));
+			ATPevent.getEvent().getCaller().setFirstName(StringUtils.defaultIfEmpty(deviceOwner.getString("firstName"), StringUtils.defaultIfEmpty(deviceOwner.getString("name"), "No First Name")));
+			ATPevent.getEvent().getCaller().setLastName(StringUtils.defaultIfEmpty(deviceOwner.getString("lastName"), "No Last Name"));
 			ATPevent.getEvent().getLocation().setCreationTimestamp(DateFormatUtils.format(new Date(deviceEvent.getLong("eventTimestamp")), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", TimeZone.getTimeZone("UTC")));
 			ATPevent.getEvent().getLocation().getPosition().setLatitude((Double)deviceEvent.getField("eventLatitude"));
 			ATPevent.getEvent().getLocation().getPosition().setLongitude((Double)deviceEvent.getField("eventLongitude"));
 			ATPevent.getEvent().getVehicle().setColor(StringUtils.defaultIfEmpty(vehicle.getString("Color"), ""));
 			ATPevent.getEvent().getVehicle().setLicencePlate(StringUtils.defaultIfEmpty(vehicle.getString("licensePlate"), ""));
-			ATPevent.getEvent().getVehicle().getVin().setWmi(vehicle.getString("vin").substring(0,3));
-			ATPevent.getEvent().getVehicle().getVin().setVds(vehicle.getString("vin").substring(3,9));
-			ATPevent.getEvent().getVehicle().getVin().setVis(vehicle.getString("vin").substring(9));
+			ATPevent.getEvent().getVehicle().getVin().setWmi(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(0,3));
+			ATPevent.getEvent().getVehicle().getVin().setVds(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(3,9));
+			ATPevent.getEvent().getVehicle().getVin().setVis(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(9));
 			Message out = exchange.getIn().copy();
 			String atpJson = new Gson().toJson(ATPevent);
 	        out.setBody(atpJson);
@@ -195,7 +218,7 @@ public class ECall extends FlowBuilder {
 	private JsonObject getJson(byte[] json) throws Exception {
 		JsonObject j = new JsonObject(new String(json));
 		JsonArray entities = j.getArray("entities");
-		if (entities.size() == 0) {
+		if (entities == null || entities.size() == 0) {
 			throw new Exception("No entities for supplied json: " + j.toString());
 		}
 		
