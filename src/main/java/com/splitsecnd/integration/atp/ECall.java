@@ -107,6 +107,11 @@ public class ECall extends FlowBuilder {
         .toF("direct:getVehicle")
         .toF("direct:getOwner")
         .end()
+         .setProperty("saveThisBody", body())
+        .setBody(constant(new byte[] {}))
+        .routingSlip(simple("rest:GET:" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG))
+        .process(new SaveMotorClubJson())
+        .setBody(property("saveThisBody"))     
         .process(new ECallMessageTransformer(getResolvedConfig().getString("project-code")))
         .toF("rest:POST:{{requestUri}}", 
         	 getConfigObject("http-connection-config")
@@ -124,12 +129,7 @@ public class ECall extends FlowBuilder {
         fromF("direct:getOwner")
         .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Owner"))
         .routingSlip(simple("rest:GET:" + GET_OWNER_FOR_DEVICE + "?" + USERGRID_CONFIG))
-        .process(new SaveMotorClubUUID())
-        .setProperty("saveThisBody", body())
-        .setBody(constant(new byte[] {}))
-        .routingSlip(simple("rest:GET:" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG))
-        .process(new SaveMotorClubJson())
-        .setBody(property("saveThisBody"));      
+        .process(new SaveMotorClubUUID());
 	}
 
 
