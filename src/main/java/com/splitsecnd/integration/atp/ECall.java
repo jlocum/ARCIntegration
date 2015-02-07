@@ -15,14 +15,26 @@ import com.nxttxn.vramel.LoggingLevel;
 import com.nxttxn.vramel.Message;
 import com.nxttxn.vramel.Processor;
 import com.nxttxn.vramel.builder.FlowBuilder;
-import com.nxttxn.vramel.processor.aggregate.AbstractKeyedAggregationStrategy;
-import com.nxttxn.vramel.processor.aggregate.AggregationStrategy;
 import com.nxttxn.vramel.processor.aggregate.KeyedAggregation;
 import com.nxttxn.vramel.processor.aggregate.KeyedBodyAggregationStrategy;
 import com.splitsecnd.integration.atp.model.EmergencyEvent;
 
 public class ECall extends FlowBuilder {
 	
+	public class AggregateOwnerAndMotorClub implements Processor {
+
+		@Override
+		public void process(Exchange exchange) throws Exception {
+			JsonObject aggJson = new JsonObject();
+			aggJson.putObject("Owner", new JsonObject(new String((byte[])exchange.getProperty("Owner"))));
+			aggJson.putObject("MotorClub", new JsonObject(exchange.getIn().getBody(String.class)));
+
+			exchange.getOut().setBody(aggJson);
+		}
+
+	}
+
+
 	public class SaveMotorClubJson implements Processor {
 
 		@Override
@@ -127,15 +139,10 @@ public class ECall extends FlowBuilder {
         .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Owner"))
         .routingSlip(simple("rest:GET:" + GET_OWNER_FOR_DEVICE + "?" + USERGRID_CONFIG))
         .process(new SaveMotorClubUUID())
-        .enrich(simple("rest:GET:" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG).getText(), new AggregationStrategy() {
-
-			@Override
-			public Exchange aggregate(Exchange oldExchange, Exchange newExchange) {
-				oldExchange.setProperty("motorClub", new JsonObject(newExchange.getIn().getBody(String.class)));
-				
-				return oldExchange;
-			}
-        });
+        .setProperty("ownerBody", body())
+        .setBody(constant(new byte[]{}))
+        .routingSlip(simple("rest:GET:" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG))
+        .process(new AggregateOwnerAndMotorClub());
 	}
 
 
