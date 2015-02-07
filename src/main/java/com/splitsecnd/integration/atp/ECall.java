@@ -26,7 +26,7 @@ public class ECall extends FlowBuilder {
 		@Override
 		public void process(Exchange exchange) throws Exception {
 			JsonObject aggJson = new JsonObject();
-			aggJson.putObject("Owner", new JsonObject(new String((byte[])exchange.getProperty("Owner"))));
+			aggJson.putObject("Owner", new JsonObject(new String((byte[])exchange.getProperty("ownerBody"))));
 			aggJson.putObject("MotorClub", new JsonObject(exchange.getIn().getBody(String.class)));
 
 			exchange.getOut().setBody(aggJson);
