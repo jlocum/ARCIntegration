@@ -107,7 +107,6 @@ public class ECall extends FlowBuilder {
         .toF("direct:getVehicle")
         .toF("direct:getOwner")
         .end()
-        .toF("direct:getMotorClub")
         .process(new ECallMessageTransformer(getResolvedConfig().getString("project-code")))
         .toF("rest:POST:{{requestUri}}", 
         	 getConfigObject("http-connection-config")
