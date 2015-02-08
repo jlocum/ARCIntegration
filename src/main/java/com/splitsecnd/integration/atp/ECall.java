@@ -181,7 +181,7 @@ public class ECall extends FlowBuilder {
 			}
 			JsonObject vehicle = null;
 			try {
-				getJson((byte[])results.get("Vehicle"));
+				vehicle = getJson((byte[])results.get("Vehicle"));
 			} catch( Exception e ) {
 				logger.warn("no vehicle found - must default", e);
 				vehicle = new JsonObject();
