@@ -63,13 +63,13 @@ public class ECall extends FlowBuilder {
 		public void process(Exchange exchange) throws Exception {
 			JsonObject usergridSubscription = new JsonObject( exchange.getIn().getBody(String.class));
 			JsonArray subscriptionsFound = usergridSubscription.getArray("entities");
-			if (subscriptionsFound.size() > 1) {
-				throw new Exception("More than one subscription found for " + exchange.getIn().getHeader("deviceId"));
-			}
-			if (subscriptionsFound.size() == 0) {
+			if (subscriptionsFound == null || subscriptionsFound.size() == 0) {
 				throw new Exception("No subscription found for " + exchange.getIn().getHeader("deviceId"));
 			}
-			JsonObject subscription = subscriptionsFound.get(0);
+			if (subscriptionsFound.size() > 1) {
+				logger.warn("More than one subscription found for {}", exchange.getIn().getHeader("deviceId"));
+			}
+			JsonObject subscription = getLatestSubscription(subscriptionsFound);
 			exchange.getOut().setBody(new byte[] {});
 			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
 			exchange.getOut().setHeader("subscriptionUUID", subscription.getString("uuid"));
@@ -81,6 +81,22 @@ public class ECall extends FlowBuilder {
 			
 			logger.info("Setting headers: subscriptionUUID - {} , vehicleUUID - {}", subscription.getString("uuid"),subscription.getString("vehicleId"));
 
+		}
+
+		private JsonObject getLatestSubscription(JsonArray subscriptionsFound) {
+			long mostRecentRecordTimestamp = 0;
+			int indexOfMostRecentRecord = -1;
+			JsonObject current = null;
+			for(int i=0; i < subscriptionsFound.size(); i++) {
+				current = subscriptionsFound.get(i);
+				long currentRecordTimestamp = current.getLong("modified");
+				if (currentRecordTimestamp > mostRecentRecordTimestamp) {
+					mostRecentRecordTimestamp = currentRecordTimestamp;
+					indexOfMostRecentRecord = i;
+				}
+			}
+			logger.info("Most recent record of {} records has modified timestamp of {}", subscriptionsFound.size(), mostRecentRecordTimestamp);
+			return subscriptionsFound.get(indexOfMostRecentRecord);
 		}
 	}
 
