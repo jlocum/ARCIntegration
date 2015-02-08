@@ -134,7 +134,7 @@ public class ECall extends FlowBuilder {
         fromF("direct:getVehicle")
         .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Vehicle"))
         .choice()
-        .when().simple("${header.vehicleUUID != null")
+        .when().simple("${header.vehicleUUID} != null")
         	.routingSlip(simple("rest:GET:" + GET_VEHICLE_FOR_DEVICE + "?" + USERGRID_CONFIG)).end()
         .otherwise()
         	.setBody(constant(new byte[]{}))
