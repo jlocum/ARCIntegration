@@ -127,7 +127,7 @@ public class ECall extends FlowBuilder {
 					ATPevent.getEvent().getLocation().getPositionTraces().add(positionTrace);
 				}
 			}
-			ATPevent.getEvent().getVehicle().setColor(StringUtils.defaultIfEmpty(vehicle.getString("Color"), ""));
+			ATPevent.getEvent().getVehicle().setColor(StringUtils.defaultIfEmpty(vehicle.getString("color"), ""));
 			ATPevent.getEvent().getVehicle().setLicencePlate(StringUtils.defaultIfEmpty(vehicle.getString("licensePlate"), ""));
 			ATPevent.getEvent().getVehicle().getVin().setVin(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567")); ;
 			Message out = exchange.getIn().copy();
