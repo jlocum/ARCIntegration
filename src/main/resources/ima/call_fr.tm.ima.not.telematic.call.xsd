@@ -1,0 +1,661 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema elementFormDefault="qualified" version="1.0"
+  targetNamespace="http://not.ima.tm.fr/telematic" xmlns:tns="http://not.ima.tm.fr/telematic"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="call">
+
+    <xs:annotation>
+      <xs:documentation>Root element of the request.</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="uidSupplier" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Unique Id that identifies the message in the
+              supplier system. Max 20 char.</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="sourcePlatformCode" type="xs:string"
+          nillable="false">
+          <xs:annotation>
+            <xs:documentation>Identifies the platform that sends this call.
+              Max 12 char.Code supplied by IMA.</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="targetPlatformCode" type="xs:string"
+          nillable="false">
+          <xs:annotation>
+            <xs:documentation>Identify the platform (or service) that will
+              receive this call. Max 12 char.Code supplied by IMA.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="hardwareTimestamp" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Timestamp from embedded or mobile device that
+              generate this call. Format ISO 8601.
+              YYYY-MM-DDTHH:MN:SC[+|-]H2:M2. ex : 1977-04-22T01:00:00-05:00.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="platfomRelayTimestamp" type="xs:string"   maxOccurs="1" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>If the call is relayed by a third platform,
+              timestamp of transmission. Format ISO 8601.
+              YYYY-MM-DDTHH:MN:SC[+|-]H2:M2. ex : 1977-04-22T01:00:00-05:00.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="caller" type="tns:Caller"  maxOccurs="1" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>Main user of the device.</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="contractualContext" type="tns:ContractualContext" nillable="false">
+          <xs:annotation>
+            <xs:documentation>Information on contract : client and number.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="request" type="tns:Request" nillable="false">
+          <xs:annotation>
+            <xs:documentation>Describe the request.</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="location" type="tns:LocationHeader" maxOccurs="1" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>Geographical location if any.</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="systemInformation" type="tns:SystemInformation"  maxOccurs="1" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>Hardware device information</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="initialContact" type="tns:Contact" nillable="false">
+          <xs:annotation>
+            <xs:documentation>Former contact and above all the hardware device
+              contact mean. This info is used to match this data vocal call for
+              instance.</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="callResponse">
+    <xs:annotation>
+      <xs:documentation>Response from the service</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="stateCode" type="xs:int" nillable="false">
+          <xs:annotation>
+            <xs:documentation>0 if success. Else contains the error code.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="stateLabel" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Error label if any.</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="uidIMA" type="xs:string" nillable="false">
+          <xs:annotation>
+            <xs:documentation>Call unique identifier in IMA Information
+              system.</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+
+
+  <xs:complexType name="Caller">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>Max 30 char.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="firstname" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>Max 50 char.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="phoneNumber" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>Max 25 char.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="email" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>Max 200 char.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="favoriteContactMean" type="xs:string"
+        nillable="false">
+        <xs:annotation>
+          <xs:documentation>'TL' Phone, 'ML' E mail,'SM' Sms,'CH' Chat
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="address" type="tns:Address"  maxOccurs="1" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Address">
+    <xs:sequence>
+      <xs:element name="street" type="xs:string" maxOccurs="3"
+        minOccurs="1">
+        <xs:annotation>
+          <xs:documentation>32 character max</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="postalCode" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>5 Character max</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="city" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>25 character max.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="countryCode" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>Country ISO code with 3 characters
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ContractualContext">
+    <xs:sequence>
+      <xs:element name="clientCompanyCode" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Code supplied by IMA. Depends on functionnal
+            context. Max 20 char.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="contractualId" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>If any, id which links a user and a company,
+            contract. Max 20 char.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Request">
+    <xs:sequence>
+      <xs:element name="contextCode" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>Context code, value supplied by IMA. Depends on
+            fonctional context. Max 15 char.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="otherInformations" type="tns:KeyValuePair"
+                 minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>This array can be used to store any information
+                        that could not be entered is specific fields. It's a classic
+                        key/value array.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="AssistanceRequest">
+    <xs:complexContent>
+      <xs:extension base="tns:Request">
+        <xs:sequence>
+          <xs:element name="requestObject" type="tns:RequestObject"
+            nillable="false" />
+          <xs:element name="contextData" type="tns:ContextObject"
+             maxOccurs="1" minOccurs="0"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="RequestObject">
+    <xs:sequence>
+      <xs:element name="contractNumber" type="xs:string" maxOccurs="1" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation></xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ContextObject">
+    
+  </xs:complexType>
+
+  <xs:complexType name="Vehicle">
+    <xs:annotation>
+      <xs:documentation>Static information about a Vehicle.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="tns:RequestObject">
+        <xs:sequence>
+          <xs:element name="registration" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>Max 50 char.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="vehicleIdentification" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>Max 20 char. (VIN number)</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="make" type="xs:string" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>Max 20 char.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="model" type="xs:string" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>Max 12 char.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="color" type="xs:string" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>Max 20 char.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="vehicleType" type="xs:string" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>Max 20 char.Ex: Truck, Motorcycle, car, ...
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="energy" type="xs:string" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>80.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          
+          <xs:element name="deliveryDate" type="xs:string" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>Format ISO 8601. YYYY-MM-DDTHH:MN:SC[+|-]H2:M2.
+                ex : 1977-04-22T01:00:00-05:00.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="EcallRequest">
+    <xs:annotation>
+      <xs:documentation>Contains all information concerning a Ecall request
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="tns:ServiceRequest">
+        <xs:sequence>
+          <xs:element name="automatic" type="xs:boolean">
+            <xs:annotation>
+              <xs:documentation>true if the hardware generates the call without
+                human interaction. If triggered by a human then set false.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="callType" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>Max 10 char.Ex:Test or Emergency
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+          <xs:element name="requestObject" type="tns:RequestObject"
+             nillable="false">
+            <xs:annotation>
+              <xs:documentation>Static information about the object of the
+                demande.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="contextData" type="tns:ContextObject"
+             maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>Event information of the request
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="ServiceRequest">
+    <xs:complexContent>
+      <xs:extension base="tns:Request">
+        <xs:sequence />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="TestimonialRequest">
+    <xs:complexContent>
+      <xs:extension base="tns:ServiceRequest">
+        <xs:sequence>
+          <xs:element name="destinationCountry" type="xs:string" />
+          <xs:element name="departureTimestamp" type="xs:string" />
+          <xs:element name="returnTimestamp" type="xs:string" />
+          <xs:element name="recipients" type="tns:Recipient"
+             minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="Recipient">
+    <xs:sequence>
+      <xs:element name="Name" type="xs:string" />
+      <xs:element name="FirstName" type="xs:string" />
+      <xs:element name="relationship" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="LocationHeader">
+    <xs:sequence>
+      <xs:element name="qualifiedAddress" type="tns:Address"   maxOccurs="1" minOccurs="0"/>
+      <xs:element name="projectionSystemCode" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>'1' for WGS84</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="LocationConfidence" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>GPS reliability. For instance 'V' if accuracy>
+            150 meters, else 'U'</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="gpsAccuracy" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>Specfic gps Accuracy</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="gpsAccuracyUnit" type="xs:string"
+        nillable="false">
+        <xs:annotation>
+          <xs:documentation>'M' for Meter, 'P' for foot</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="altitudeUnit" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>'M' for Meter, 'P' for foot</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="lastLocationTimestamp" type="xs:string"
+        nillable="false">
+        <xs:annotation>
+          <xs:documentation>Format ISO 8601. YYYY-MM-DDTHH:MN:SC[+|-]H2:M2.
+            ex : 1977-04-22T01:00:00-05:00</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="locations" type="tns:Location"
+        maxOccurs="10" minOccurs="1">
+        <xs:annotation>
+          <xs:documentation>Locations ordered by the most recent first.At
+            Least one</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Location">
+    <xs:sequence>
+      <xs:element name="latitude" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>The expected value is the integer part and signed of WGS84 coordinates, in decimal degrees, and multiplied by 10E7. For instance 46,325948954 => 463259489
+(Max 10 char)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="longitude" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>The expected value is the integer part and signed
+            of WGS84 coordinates, in decimal degrees, and multiplied by 10E7.
+            (Max 10 char)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="direction" type="xs:int"  maxOccurs="1" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>In degree (0-359). 0° for North, in clockwise
+            (ex:90° for east)</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="altitude" type="xs:string"  maxOccurs="1" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SystemInformation">
+    <xs:sequence>
+      <xs:element name="make" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>Maker. Ex: Apple/Samsung (max 20 cha).
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="model" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>Model. ex:Galaxy2,Iphone 5 (max 20 cha).
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="osName" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>Operation system. Ex: Androi, IOS (max 20 cha).
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="osVersion" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>Operation system version. (max 20 char.)
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Contact">
+    <xs:sequence>
+      <xs:element name="type" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>'TL' Phone, 'ML' E mail,'SM' Sms,'CH' Chat,'UR'
+            uri</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="contact" type="xs:string" nillable="false">
+        <xs:annotation>
+          <xs:documentation>Contact address, could be a phone number, URI,
+            email or url. max 255 char.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="uidEquipement" type="xs:string"
+        nillable="false">
+        <xs:annotation>
+          <xs:documentation>max 38 char.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="KeyValuePair">
+    <xs:sequence>
+      <xs:element name="key" type="xs:string" maxOccurs="1" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>Required if used. Max 15 char.</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="value" type="xs:string" maxOccurs="1" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>Required if used. Max 255 char.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="VehicleAccidentContext">
+    <xs:annotation>
+      <xs:documentation>Event Information of a vehicle, usually used for
+        ecall.</xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="tns:ContextObject">
+        <xs:sequence>
+          <xs:element name="rolled" type="xs:boolean" maxOccurs="1" minOccurs="0"/>
+          <xs:element name="airbag" type="xs:boolean" maxOccurs="1" minOccurs="0"/>
+          <xs:element name="crash" type="xs:boolean" maxOccurs="1" minOccurs="0"/>
+          <xs:element name="engine" type="xs:boolean" maxOccurs="1" minOccurs="0"/>
+          <xs:element name="noignition" type="xs:boolean" maxOccurs="1" minOccurs="0"/>
+          <xs:element name="moving" type="xs:boolean" maxOccurs="1" minOccurs="0"/>
+          <xs:element name="frontcrash" type="xs:boolean" maxOccurs="1" minOccurs="0"/>
+          <xs:element name="rearcrash" type="xs:boolean" maxOccurs="1" minOccurs="0"/>
+          <xs:element name="sidecrash" type="xs:boolean" maxOccurs="1" minOccurs="0"/>
+          <xs:element name="passengers" type="xs:int" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>max 2 digit.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="deccel" type="xs:int" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>max 2 digit.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="deccelUnit" type="xs:string" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>max 4 char.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="towNeeded" type="xs:boolean" maxOccurs="1" minOccurs="0"/>
+          <xs:element name="theftTrackingActivated" type="xs:boolean" maxOccurs="1" minOccurs="0"/>
+          <xs:element name="inCarAlarmTriggered" type="xs:boolean" maxOccurs="1" minOccurs="0"/>
+          <xs:element name="serviceProviderAdresse" type="xs:string" maxOccurs="1" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>Max 512.</xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="VehicleDiagContext">
+    <xs:annotation>
+      <xs:documentation>Diagnostic context, usually used with bcall.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="tns:ContextObject">
+        <xs:sequence>
+          <xs:element name="watertemp" type="xs:int" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>In Celsuis degree. max 3 digit.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="oiltemp" type="xs:int" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>In Celsuis degree. max 3 digit.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="oillevel" type="xs:int" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>In Celsuis degree. max 3 digit.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="fuellevel" type="xs:int" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation> max 3 digit.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="fueleconomy" type="xs:int" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation> max 6 digit.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="fuelrange" type="xs:int" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation> max 4 digit.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="lpglevel" type="xs:int" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>max 3 digit.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="lpgrange" type="xs:int" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>max 4 digit.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="kilometers" type="xs:int" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>max 6 digit.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="servicerange" type="xs:int" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>max 6 digit.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="servicedays" type="xs:int" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>max 5 digit.</xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element name="waterTempAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="oilTempAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="waterLevelAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="oilLevelAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="oilPressureAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="gearOilTempAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="fluidPressureAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="brakeLevelAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="suspensionMajorAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="brakePadAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="gearboxAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="eobdAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="antiTheftAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="tirePressureAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="absAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="espAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="fpsFluidLevelAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="fpsFullAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="suspensionSpeedAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="suspension2Alarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="steeringAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="parkBrakeAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="waterInFuelAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="engineAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="suspension3Alarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="steering2Alarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="brakeAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="airbagAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="fpsFluid2Alarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="batteryAlarm" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+          <xs:element name="tireFLAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="tireFRAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="tireRRAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+          <xs:element name="tireRLAlarm" type="xs:boolean"  maxOccurs="1" minOccurs="0"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+
+
+
+</xs:schema>
+

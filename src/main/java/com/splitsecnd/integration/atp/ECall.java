@@ -2,6 +2,7 @@ package com.splitsecnd.integration.atp;
 
 import java.net.URLEncoder;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.TimeZone;
 
 import org.apache.commons.lang.StringUtils;
@@ -9,7 +10,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nxttxn.vramel.Exchange;
 import com.nxttxn.vramel.LoggingLevel;
 import com.nxttxn.vramel.Message;
@@ -18,115 +19,33 @@ import com.nxttxn.vramel.builder.FlowBuilder;
 import com.nxttxn.vramel.processor.aggregate.KeyedAggregation;
 import com.nxttxn.vramel.processor.aggregate.KeyedBodyAggregationStrategy;
 import com.splitsecnd.integration.atp.model.EmergencyEvent;
+import com.splitsecnd.integration.atp.model.PositionTrace;
 
 public class ECall extends FlowBuilder {
 	
-	public class AggregateOwnerAndMotorClub implements Processor {
-
-		@Override
-		public void process(Exchange exchange) throws Exception {
-			JsonObject aggJson = new JsonObject();
-			aggJson.putObject("Owner", new JsonObject(new String((byte[])exchange.getProperty("ownerBody"))));
-			aggJson.putObject("MotorClub", new JsonObject(exchange.getIn().getBody(String.class)));
-
-			exchange.getOut().setBody(aggJson);
-		}
-
-	}
-
-
-	public class SaveMotorClubJson implements Processor {
-
-		@Override
-		public void process(Exchange exchange) throws Exception {
-			JsonObject motorClub = getJson(exchange.getIn().getBody(byte[].class));
-			exchange.setProperty("motorclub", motorClub);
-		}
-	}
-
-
-	public class SaveMotorClubUUID implements Processor {
-
-		@Override
-		public void process(Exchange exchange) throws Exception {
-			JsonObject deviceOwner = getJson(exchange.getIn().getBody(byte[].class));
-			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
-			exchange.getOut().setHeader("motorclubUUID", deviceOwner.getString("motorClubId"));
-			exchange.getOut().setBody(exchange.getIn().getBody());
-		}
-
-	}
+	private ObjectMapper mapper;
 	
-	public class RetrieveSubscriptionUUID implements Processor {
-
-		@Override
-		public void process(Exchange exchange) throws Exception {
-			JsonObject usergridSubscription = new JsonObject( exchange.getIn().getBody(String.class));
-			JsonArray subscriptionsFound = usergridSubscription.getArray("entities");
-			if (subscriptionsFound == null || subscriptionsFound.size() == 0) {
-				throw new Exception("No subscription found for " + exchange.getIn().getHeader("deviceId"));
-			}
-			if (subscriptionsFound.size() > 1) {
-				logger.warn("More than one subscription found for {}", exchange.getIn().getHeader("deviceId"));
-			}
-			JsonObject subscription = getLatestSubscription(subscriptionsFound);
-			exchange.getOut().setBody(new byte[] {});
-			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
-			exchange.getOut().setHeader("subscriptionUUID", subscription.getString("uuid"));
-			exchange.getOut().setHeader("vehicleUUID", subscription.getString("vehicleId"));
-			if (StringUtils.isEmpty(subscription.getString("vehicleId"))) {
-				logger.warn("No vehicleId found for {}", exchange.getIn().getHeader("deviceId"));
-			}
-			exchange.getOut().removeHeader(Exchange.HTTP_QUERY);
-			
-			logger.info("Setting headers: subscriptionUUID - {} , vehicleUUID - {}", subscription.getString("uuid"),subscription.getString("vehicleId"));
-
-		}
-
-		private JsonObject getLatestSubscription(JsonArray subscriptionsFound) {
-			long mostRecentRecordTimestamp = 0;
-			int indexOfMostRecentRecord = -1;
-			JsonObject current = null;
-			for(int i=0; i < subscriptionsFound.size(); i++) {
-				current = subscriptionsFound.get(i);
-				long currentRecordTimestamp = current.getLong("modified");
-				if (currentRecordTimestamp > mostRecentRecordTimestamp) {
-					mostRecentRecordTimestamp = currentRecordTimestamp;
-					indexOfMostRecentRecord = i;
-				}
-			}
-			logger.info("Most recent record of {} records has modified timestamp of {}", subscriptionsFound.size(), mostRecentRecordTimestamp);
-			return subscriptionsFound.get(indexOfMostRecentRecord);
-		}
-	}
-
-
 	public class SaveOriginalEvent implements Processor {
 
 		@Override
 		public void process(Exchange exchange) throws Exception {
-			JsonObject deviceEvent = new JsonObject( exchange.getIn().getBody(String.class));
-			exchange.setProperty("Event", deviceEvent);
+			JsonObject event = new JsonObject( exchange.getIn().getBody(String.class));
+			JsonObject device = event.getObject("device_");
+			exchange.setProperty("Event", event);
 			exchange.getOut().setBody(new byte[] {});
 			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
 			exchange.getOut().removeHeader(Exchange.HTTP_QUERY);
-			exchange.getOut().setHeader("deviceId", URLEncoder.encode(URLEncoder.encode(deviceEvent.getString("splitsecndId_"))));
+			exchange.getOut().setHeader("deviceId", URLEncoder.encode(URLEncoder.encode(device.getString("splitsecndId_"))));
 			
-			logger.info("Setting deviceId header: {} is encoded as {}", deviceEvent.getString("splitsecndId_"), exchange.getOut().getHeader("deviceId"));
+			logger.info("Setting deviceId header: {} is encoded as {}", device.getString("splitsecndId_"), exchange.getOut().getHeader("deviceId"));
 		}
 
 	}
 
-
-	private static String USERGRID_CONFIG = "host={{usergrid.host}}&port={{usergrid.port}}&ssl={{usergrid.ssl}}";
-	private static String USERGRID_PATH = "/{{usergrid.org}}/{{usergrid.app}}";
-	private static String SUBSCRIPTIONS = USERGRID_PATH + "/{{subscriptions}}";
-	private static String GET_VEHICLE_FOR_DEVICE = USERGRID_PATH + "/vehicles/${header.vehicleUUID}";
-	private static String GET_OWNER_FOR_DEVICE = SUBSCRIPTIONS + "/${header.subscriptionUUID}/{{subscriptionUserConnection}}";
-	private static String GET_MOTORCLUB_FOR_OWNER = USERGRID_PATH + "/motorclubs/${header.motorclubUUID}";
-
 	@Override
 	public void configure() throws Exception {
+		mapper = new ObjectMapper();
+		
         fromF("vertxQueue:ATPQueue")
         .log(LoggingLevel.DEBUG, ECall.class.getName(), "[ECall]: ${body}")
         .onException(Exception.class).handled(true).log(LoggingLevel.ERROR, ECall.class.getName(), "Error").end()
@@ -137,33 +56,10 @@ public class ECall extends FlowBuilder {
         .toF("direct:getVehicle")
         .toF("direct:getOwner")
         .end()
-        .process(new ECallMessageTransformer(getResolvedConfig().getString("project-code")))
-        .toF("rest:POST:{{requestUri}}", 
-        	 getConfigObject("http-connection-config")
-        ).toF("vertx:splitsecnd.dbUpdater");
-        
-        fromF("direct:getSubscription")
-        .setHeader(Exchange.HTTP_QUERY, simple("ql=select%20*%20where%20deviceId=%27${header.deviceId}%27"))
-        .toF("rest:GET:" + SUBSCRIPTIONS + "?" + USERGRID_CONFIG )
-        .process(new RetrieveSubscriptionUUID());
-        
-        fromF("direct:getVehicle")
-        .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Vehicle"))
-        .choice()
-        .when().simple("${header.vehicleUUID} != null")
-        	.routingSlip(simple("rest:GET:" + GET_VEHICLE_FOR_DEVICE + "?" + USERGRID_CONFIG)).end()
-        .otherwise()
-        	.setBody(constant(new byte[]{}))
-        .endChoice();
-        
-        fromF("direct:getOwner")
-        .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Owner"))
-        .routingSlip(simple("rest:GET:" + GET_OWNER_FOR_DEVICE + "?" + USERGRID_CONFIG))
-        .process(new SaveMotorClubUUID())
-        .setProperty("ownerBody", body())
-        .setBody(constant(new byte[]{}))
-        .routingSlip(simple("rest:GET:" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG))
-        .process(new AggregateOwnerAndMotorClub());
+        .process(new ECallMessageTransformer(getResolvedConfig().getString("arc.project-code")))
+        .toF("rest:POST:{{arc.requestUri}}", 
+        	 getConfigObject("arc.http-connection-config")
+        ).toF("vertx:splitsecnd.dbUpdater");        
 	}
 
 
@@ -178,7 +74,8 @@ public class ECall extends FlowBuilder {
 		@Override
 		public void process(Exchange exchange) throws Exception {
 			KeyedAggregation results = exchange.getIn().getBody(KeyedAggregation.class);
-			JsonObject deviceEvent = exchange.getProperty("Event",JsonObject.class);
+			JsonObject event = exchange.getProperty("Event",JsonObject.class);
+			JsonObject device = event.getObject("device_");
 			JsonObject motorClub = null;
 			try {
 				motorClub = results.get("Owner");
@@ -202,29 +99,42 @@ public class ECall extends FlowBuilder {
 				logger.warn("no vehicle found - must default", e);
 				vehicle = new JsonObject();
 			}
-			EmergencyEvent ATPevent = new EmergencyEvent();
+			EmergencyEvent ATPevent = EmergencyEvent.getInstance();
 			ATPevent.getService().setAssistanceType("ECALL");
 			ATPevent.getService().setProjectCode(projectCode);
-			//need to get this from customer...
 			ATPevent.getService().setServiceIdentifier(StringUtils.defaultIfEmpty(motorClub.getString("serviceHomeId"),"GB"));
 			ATPevent.getEvent().setActivationMethod("Manual");
-			ATPevent.getEvent().setCallerId(deviceEvent.getString("phoneNumber"));
+			ATPevent.getEvent().setCallerId(device.getString("phoneNumber"));
 			ATPevent.getEvent().getCaller().setCallbackPhoneNumber("");
 			ATPevent.getEvent().getCaller().setFirstName(StringUtils.defaultIfEmpty(deviceOwner.getString("firstName"), StringUtils.defaultIfEmpty(deviceOwner.getString("name"), "No First Name")));
 			ATPevent.getEvent().getCaller().setLastName(StringUtils.defaultIfEmpty(deviceOwner.getString("lastName"), "No Last Name"));
-			ATPevent.getEvent().getLocation().setCreationTimestamp(DateFormatUtils.format(new Date(deviceEvent.getLong("eventTimestamp")), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", TimeZone.getTimeZone("UTC")));
-			ATPevent.getEvent().getLocation().getPosition().setLatitude((Double)deviceEvent.getField("eventLatitude"));
-			ATPevent.getEvent().getLocation().getPosition().setLongitude((Double)deviceEvent.getField("eventLongitude"));
+			ATPevent.getEvent().getLocation().setCreationTimestamp(DateFormatUtils.format(new Date(event.getLong("time_")), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", TimeZone.getTimeZone("UTC")));
+			ATPevent.getEvent().getLocation().setAltitude(event.getLong("altitude"));
+			ATPevent.getEvent().getLocation().setHeading(event.getInteger("heading_"));
+			ATPevent.getEvent().getLocation().setNumberOfSatellites(event.getInteger("satellites"));
+			ATPevent.getEvent().getLocation().setSpeed(event.getInteger("speed_"));
+			ATPevent.getEvent().getLocation().setIsPositionTrustable((event.getNumber("hdop").doubleValue() < 8 ? true : false));	
+			ATPevent.getEvent().getLocation().getPosition().setLatitude((Double)event.getField("eventLatitude_"));
+			ATPevent.getEvent().getLocation().getPosition().setLongitude((Double)event.getField("eventLongitude_"));
+			JsonArray positions = event.getArray("pathData_");
+			if (positions != null) {
+				Iterator<Object> it = positions.iterator();
+				while(it.hasNext()) {
+					JsonObject position = (JsonObject) it.next();
+					PositionTrace positionTrace = new PositionTrace();
+					positionTrace.setLatitude(position.getNumber("lat_").doubleValue());
+					positionTrace.setLongitude(position.getNumber("lon_").doubleValue());
+					ATPevent.getEvent().getLocation().getPositionTraces().add(positionTrace);
+				}
+			}
 			ATPevent.getEvent().getVehicle().setColor(StringUtils.defaultIfEmpty(vehicle.getString("Color"), ""));
 			ATPevent.getEvent().getVehicle().setLicencePlate(StringUtils.defaultIfEmpty(vehicle.getString("licensePlate"), ""));
-			ATPevent.getEvent().getVehicle().getVin().setWmi(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(0,3));
-			ATPevent.getEvent().getVehicle().getVin().setVds(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(3,9));
-			ATPevent.getEvent().getVehicle().getVin().setVis(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(9));
+			ATPevent.getEvent().getVehicle().getVin().setVin(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567")); ;
 			Message out = exchange.getIn().copy();
-			String atpJson = new Gson().toJson(ATPevent);
+			String atpJson = mapper.writeValueAsString(ATPevent);
 	        out.setBody(atpJson);
 	        exchange.setProperty("eventJson", atpJson);
-	        out.setHeader("ein", deviceEvent.getString("ein"));
+	        out.setHeader("ein", device.getString("ein"));
 	        out.removeHeader("Authorization");
 	        exchange.setOut(out);			
 		}

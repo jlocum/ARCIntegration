@@ -14,56 +14,56 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("org.jsonschema2pojo")
 @JsonPropertyOrder({
-    "Event",
-    "Service"
+    "Latitude",
+    "Longitude"
 })
-public class EmergencyEvent {
+public class Position {
 
-    @JsonProperty("Event")
-    private Event event;
-    @JsonProperty("Service")
-    private com.splitsecnd.integration.atp.model.Service service;
+    @JsonProperty("Latitude")
+    private Double Latitude;
+    @JsonProperty("Longitude")
+    private Double Longitude;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     /**
      * 
      * @return
-     *     The Event
+     *     The Latitude
      */
-    @JsonProperty("Event")
-    public Event getEvent() {
-        return event;
+    @JsonProperty("Latitude")
+    public Double getLatitude() {
+        return Latitude;
     }
 
     /**
      * 
-     * @param event
-     *     The Event
+     * @param Latitude
+     *     The Latitude
      */
-    @JsonProperty("Event")
-    public void setEvent(Event event) {
-        this.event = event;
+    @JsonProperty("Latitude")
+    public void setLatitude(Double Latitude) {
+        this.Latitude = Latitude;
     }
 
     /**
      * 
      * @return
-     *     The Service
+     *     The Longitude
      */
-    @JsonProperty("Service")
-    public com.splitsecnd.integration.atp.model.Service getService() {
-        return service;
+    @JsonProperty("Longitude")
+    public Double getLongitude() {
+        return Longitude;
     }
 
     /**
      * 
-     * @param service
-     *     The Service
+     * @param Longitude
+     *     The Longitude
      */
-    @JsonProperty("Service")
-    public void setService(com.splitsecnd.integration.atp.model.Service service) {
-        this.service = service;
+    @JsonProperty("Longitude")
+    public void setLongitude(Double Longitude) {
+        this.Longitude = Longitude;
     }
 
     @JsonAnyGetter
@@ -76,11 +76,8 @@ public class EmergencyEvent {
         this.additionalProperties.put(name, value);
     }
 
-	public static EmergencyEvent getInstance() {
-		EmergencyEvent ee = new EmergencyEvent();
-		ee.setEvent(Event.getInstance());
-		ee.setService(Service.getInstance());
-		
-		return ee;
+	public static Position getInstance() {
+		return new Position();
 	}
+
 }
