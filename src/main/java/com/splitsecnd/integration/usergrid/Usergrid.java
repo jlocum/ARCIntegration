@@ -16,10 +16,15 @@ public class Usergrid extends FlowBuilder {
 		@Override
 		public void process(Exchange exchange) throws Exception {
 			JsonObject aggJson = new JsonObject();
-			aggJson.putObject("Owner", new JsonObject(new String((byte[])exchange.getProperty("ownerBody"))));
-			aggJson.putObject("MotorClub", new JsonObject(exchange.getIn().getBody(String.class)));
+			byte[] ownerBody = (byte[]) exchange.getProperty("ownerBody");
+			byte[] motorClubBody = (byte[]) exchange.getProperty("motorClubBody");
+			String owner = (ownerBody == null) ? null : new String(ownerBody);
+			String motorClub = (motorClubBody == null) ? null : new String(motorClubBody);
+			aggJson.putObject("Owner", (owner == null || owner.length() == 0) ? null : new JsonObject(owner));
+			aggJson.putObject("MotorClub", (motorClub == null  || motorClub.length() == 0) ? null : new JsonObject(motorClub));
 
-			exchange.getOut().setBody(aggJson);
+			exchange.getIn().setBody(aggJson.toString().getBytes());
+			exchange.getOut().setBody(exchange.getIn().getBody());
 		}
 
 	}
@@ -115,12 +120,20 @@ public class Usergrid extends FlowBuilder {
         .endChoice();
         
         fromF("direct:getOwner")
+        .onException(Throwable.class).process(new AggregateOwnerAndMotorClub())
+        	.end()
         .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Owner"))
         .routingSlip(simple("rest:GET:" + GET_OWNER_FOR_DEVICE + "?" + USERGRID_CONFIG))
         .process(new SaveMotorClubUUID())
         .setProperty("ownerBody", body())
         .setBody(constant(new byte[]{}))
-        .routingSlip(simple("rest:GET:" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG))
+        .choice()
+        .when().simple("${header.motorclubUUID} != null")
+        	.routingSlip(simple("rest:GET:" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG)).end()
+        .otherwise()
+        	.setBody(constant(new byte[]{}))
+        .endChoice()
+        .setProperty("motorClubBody", body())
         .process(new AggregateOwnerAndMotorClub());
 	}
 
