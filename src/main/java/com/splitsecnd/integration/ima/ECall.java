@@ -211,7 +211,7 @@ public class ECall extends FlowBuilder {
 	        exchange.setProperty("eventJson", imaXML);
 	        out.setHeader("ein", device.getString("ein"));
 	        out.removeHeader("Authorization");
-	        out.setHeader("Content-Type", "application/xml");
+	        out.setHeader(Exchange.CONTENT_TYPE, "application/xml");
 	        exchange.setOut(out);			
 		}
 		
