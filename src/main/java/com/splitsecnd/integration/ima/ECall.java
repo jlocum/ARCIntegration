@@ -42,14 +42,14 @@ public class ECall extends FlowBuilder {
 		@Override
 		public void process(Exchange exchange) throws Exception {
 			JsonObject event = new JsonObject( exchange.getIn().getBody(String.class));
-			JsonObject device = event.getObject("device_");
+			JsonObject device = event.getObject("device");
 			exchange.setProperty("Event", event);
 			exchange.getOut().setBody(new byte[] {});
 			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
 			exchange.getOut().removeHeader(Exchange.HTTP_QUERY);
-			exchange.getOut().setHeader("deviceId", URLEncoder.encode(URLEncoder.encode(device.getString("splitsecndId_"))));
+			exchange.getOut().setHeader("deviceId", URLEncoder.encode(URLEncoder.encode(device.getString("splitsecndId"))));
 			
-			logger.info("Setting deviceId header: {} is encoded as {}", device.getString("splitsecndId_"), exchange.getOut().getHeader("deviceId"));
+			logger.info("Setting deviceId header: {} is encoded as {}", device.getString("splitsecndId"), exchange.getOut().getHeader("deviceId"));
 		}
 
 	}
@@ -97,7 +97,7 @@ public class ECall extends FlowBuilder {
 		public void process(Exchange exchange) throws Exception {
 			KeyedAggregation results = exchange.getIn().getBody(KeyedAggregation.class);
 			JsonObject event = exchange.getProperty("Event",JsonObject.class);
-			JsonObject device = event.getObject("device_");
+			JsonObject device = event.getObject("device");
 			JsonObject aggregate = new JsonObject(new String((byte[]) results.get("Owner")));
 			JsonObject motorClub = null;
 			try {
@@ -122,10 +122,10 @@ public class ECall extends FlowBuilder {
 			}
 			
 			Call call = new Call();
-			call.setUidSupplier(event.getLong("id_") + "-" + event.getLong("time_")); //Put something here
+			call.setUidSupplier(event.getLong("id") + "-" + event.getLong("time")); //Put something here
 			call.setSourcePlatformCode(sourcePlatform);
 			call.setTargetPlatformCode(targetPlatform);
-			call.setHardwareTimestamp(DateFormatUtils.format(new Date(event.getLong("time_")), "yyyy-MM-dd'T'HH:mm:ssZ", TimeZone.getTimeZone("UTC")));
+			call.setHardwareTimestamp(DateFormatUtils.format(new Date(event.getLong("time")), "yyyy-MM-dd'T'HH:mm:ssZ", TimeZone.getTimeZone("UTC")));
 			
 			Caller caller = new Caller();
 			caller.setFirstname(StringUtils.defaultIfEmpty(deviceOwner.getString("firstName"), "No First Name"));
@@ -143,7 +143,7 @@ public class ECall extends FlowBuilder {
 			call.setContractualContext(context);
 			
 			EcallRequest request = new EcallRequest();
-			request.setAutomatic((event.getInteger("cause_") == 1));
+			request.setAutomatic((event.getInteger("cause") == 1));
 			call.setRequest(request);
 			
 			Vehicle IMAvehicle = new Vehicle();
@@ -155,7 +155,7 @@ public class ECall extends FlowBuilder {
 			request.setRequestObject(IMAvehicle);
 			
 			VehicleAccidentContext IMAcontext = new VehicleAccidentContext();
-			IMAcontext.setCrash((event.getInteger("cause_") == 1));
+			IMAcontext.setCrash((event.getInteger("cause") == 1));
 			request.setContextData(IMAcontext);
 			
 			LocationHeader locationHeader = new LocationHeader();
@@ -165,15 +165,15 @@ public class ECall extends FlowBuilder {
 			locationHeader.setGpsAccuracyUnit("M");
 			//hdop * 3m (3m is standard gps error)
 			locationHeader.setGpsAccuracy(Float.toString(event.getNumber("hdop").floatValue() * 3));
-			JsonArray positions = event.getArray("pathData_");
+			JsonArray positions = event.getArray("pathData");
 			locationHeader.setLastLocationTimestamp(DateFormatUtils.format(new Date(event.getLong("time_")), "yyyy-MM-dd'T'HH:mm:ssZ", TimeZone.getTimeZone("UTC")));
 			if (positions != null) {
 				Iterator<Object> it = positions.iterator();
 				while(it.hasNext()) {
 					JsonObject position = (JsonObject) it.next();
 					Location location = new Location();
-					location.setLatitude( Long.toString(new Double(position.getNumber("lat_").doubleValue() * Math.pow(10,7)).longValue()));
-					location.setLongitude(Long.toString(new Double(position.getNumber("lon_").doubleValue() * Math.pow(10,7)).longValue()));
+					location.setLatitude( Long.toString(new Double(position.getNumber("latitude").doubleValue() * Math.pow(10,7)).longValue()));
+					location.setLongitude(Long.toString(new Double(position.getNumber("longitude").doubleValue() * Math.pow(10,7)).longValue()));
 					location.setDirection(position.getNumber("heading").intValue());
 					locationHeader.getLocations().add(location);
 				}
