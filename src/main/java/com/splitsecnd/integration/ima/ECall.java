@@ -166,7 +166,7 @@ public class ECall extends FlowBuilder {
 			//hdop * 3m (3m is standard gps error)
 			locationHeader.setGpsAccuracy(Float.toString(event.getNumber("hdop").floatValue() * 3));
 			JsonArray positions = event.getArray("pathData");
-			locationHeader.setLastLocationTimestamp(DateFormatUtils.format(new Date(event.getLong("time_")), "yyyy-MM-dd'T'HH:mm:ssZ", TimeZone.getTimeZone("UTC")));
+			locationHeader.setLastLocationTimestamp(DateFormatUtils.format(new Date(event.getLong("time")), "yyyy-MM-dd'T'HH:mm:ssZ", TimeZone.getTimeZone("UTC")));
 			if (positions != null) {
 				Iterator<Object> it = positions.iterator();
 				while(it.hasNext()) {
