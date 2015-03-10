@@ -1,9 +1,13 @@
 package com.splitsecnd.integration.ima;
 
+import java.io.ByteArrayOutputStream;
 import java.net.URLEncoder;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.TimeZone;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Marshaller;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -118,21 +122,24 @@ public class ECall extends FlowBuilder {
 			}
 			
 			Call call = new Call();
-			call.setUidSupplier(""); //Put something here
+			call.setUidSupplier(event.getLong("id_") + "-" + event.getLong("time_")); //Put something here
 			call.setSourcePlatformCode(sourcePlatform);
 			call.setTargetPlatformCode(targetPlatform);
-			call.setHardwareTimestamp(DateFormatUtils.format(new Date(event.getLong("time_")), "yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone("UTC")));
+			call.setHardwareTimestamp(DateFormatUtils.format(new Date(event.getLong("time_")), "yyyy-MM-dd'T'HH:mm:ssZ", TimeZone.getTimeZone("UTC")));
 			
 			Caller caller = new Caller();
 			caller.setFirstname(StringUtils.defaultIfEmpty(deviceOwner.getString("firstName"), "No First Name"));
 			caller.setName(StringUtils.defaultIfEmpty(deviceOwner.getString("lastName"), StringUtils.defaultIfEmpty(deviceOwner.getString("name"), "No Last Name")));
 			caller.setPhoneNumber(device.getString("phoneNumber"));
-			caller.setEmail("");
+			//placeholder
+			caller.setEmail("none@given");
 			caller.setFavoriteContactMean("TL");
 			call.setCaller(caller);
 			
 			ContractualContext context = new ContractualContext();
 			context.setClientCompanyCode(clientCompanyCode);
+			//placeholder
+			context.setContractualId("-");
 			call.setContractualContext(context);
 			
 			EcallRequest request = new EcallRequest();
@@ -158,8 +165,8 @@ public class ECall extends FlowBuilder {
 			locationHeader.setGpsAccuracyUnit("M");
 			//hdop * 3m (3m is standard gps error)
 			locationHeader.setGpsAccuracy(Float.toString(event.getNumber("hdop").floatValue() * 3));
-			locationHeader.setLastLocationTimestamp(DateFormatUtils.format(new Date(event.getLong("time_")), "yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone("UTC")));
 			JsonArray positions = event.getArray("pathData_");
+			locationHeader.setLastLocationTimestamp(DateFormatUtils.format(new Date(event.getLong("time_")), "yyyy-MM-dd'T'HH:mm:ssZ", TimeZone.getTimeZone("UTC")));
 			if (positions != null) {
 				Iterator<Object> it = positions.iterator();
 				while(it.hasNext()) {
@@ -176,6 +183,7 @@ public class ECall extends FlowBuilder {
 			Contact contact = new Contact();
 			contact.setContact(device.getString("phoneNumber"));
 			contact.setType("TL");
+			contact.setUidEquipement("-");
 			call.setInitialContact(contact);
 			
 /*			EmergencyEvent ATPevent = new EmergencyEvent();
@@ -197,7 +205,8 @@ public class ECall extends FlowBuilder {
 			ATPevent.getEvent().getVehicle().getVin().setVds(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(3,9));
 			ATPevent.getEvent().getVehicle().getVin().setVis(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(9));
 */			Message out = exchange.getIn().copy();
-			String imaXML = mapper.writeValueAsString(call);
+			//String imaXML = mapper.writeValueAsString(call);
+			String imaXML = generateXML(call);
 	        out.setBody(imaXML);
 	        exchange.setProperty("eventJson", imaXML);
 	        out.setHeader("ein", device.getString("ein"));
@@ -206,6 +215,18 @@ public class ECall extends FlowBuilder {
 	        exchange.setOut(out);			
 		}
 		
+	}
+	
+	private String generateXML(Call call) throws Exception{
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		JAXBContext jc = JAXBContext.newInstance(call.getClass());
+
+		Marshaller marshaller = jc.createMarshaller();
+		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+		marshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, "classpath:ima/call_fr.tm.ima.not.telematic.call.xsd");
+		marshaller.marshal(call, baos);
+
+		return baos.toString();
 	}
 
 	private JsonObject getEntity(byte[] json) throws Exception {

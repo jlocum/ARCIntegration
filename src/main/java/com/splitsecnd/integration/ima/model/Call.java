@@ -61,7 +61,6 @@ import com.fasterxml.jackson.xml.annotate.JacksonXmlRootElement;
     "initialContact"
 })
 @XmlRootElement(name = "call")
-@JacksonXmlRootElement(localName="call")
 public class Call {
 
     @XmlElement(required = true)
