@@ -30,14 +30,14 @@ public class ECall extends FlowBuilder {
 		@Override
 		public void process(Exchange exchange) throws Exception {
 			JsonObject event = new JsonObject( exchange.getIn().getBody(String.class));
-			JsonObject device = event.getObject("device_");
+			JsonObject device = event.getObject("device");
 			exchange.setProperty("Event", event);
 			exchange.getOut().setBody(new byte[] {});
 			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
 			exchange.getOut().removeHeader(Exchange.HTTP_QUERY);
-			exchange.getOut().setHeader("deviceId", URLEncoder.encode(URLEncoder.encode(device.getString("splitsecndId_"))));
+			exchange.getOut().setHeader("deviceId", URLEncoder.encode(URLEncoder.encode(device.getString("splitsecndId"))));
 			
-			logger.info("Setting deviceId header: {} is encoded as {}", device.getString("splitsecndId_"), exchange.getOut().getHeader("deviceId"));
+			logger.info("Setting deviceId header: {} is encoded as {}", device.getString("splitsecndId"), exchange.getOut().getHeader("deviceId"));
 		}
 
 	}
@@ -75,7 +75,7 @@ public class ECall extends FlowBuilder {
 		public void process(Exchange exchange) throws Exception {
 			KeyedAggregation results = exchange.getIn().getBody(KeyedAggregation.class);
 			JsonObject event = exchange.getProperty("Event",JsonObject.class);
-			JsonObject device = event.getObject("device_");
+			JsonObject device = event.getObject("device");
 			JsonObject motorClub = null;
 			try {
 				motorClub = results.get("Owner");
@@ -108,22 +108,22 @@ public class ECall extends FlowBuilder {
 			ATPevent.getEvent().getCaller().setCallbackPhoneNumber("");
 			ATPevent.getEvent().getCaller().setFirstName(StringUtils.defaultIfEmpty(deviceOwner.getString("firstName"), StringUtils.defaultIfEmpty(deviceOwner.getString("name"), "No First Name")));
 			ATPevent.getEvent().getCaller().setLastName(StringUtils.defaultIfEmpty(deviceOwner.getString("lastName"), "No Last Name"));
-			ATPevent.getEvent().getLocation().setCreationTimestamp(DateFormatUtils.format(new Date(event.getLong("time_")), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", TimeZone.getTimeZone("UTC")));
+			ATPevent.getEvent().getLocation().setCreationTimestamp(DateFormatUtils.format(new Date(event.getLong("time")), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", TimeZone.getTimeZone("UTC")));
 			ATPevent.getEvent().getLocation().setAltitude(event.getLong("altitude"));
-			ATPevent.getEvent().getLocation().setHeading(event.getInteger("heading_"));
+			ATPevent.getEvent().getLocation().setHeading(event.getInteger("heading"));
 			ATPevent.getEvent().getLocation().setNumberOfSatellites(event.getInteger("satellites"));
-			ATPevent.getEvent().getLocation().setSpeed(event.getInteger("speed_"));
+			ATPevent.getEvent().getLocation().setSpeed(event.getInteger("speed"));
 			ATPevent.getEvent().getLocation().setIsPositionTrustable((event.getNumber("hdop").doubleValue() < 8 ? true : false));	
-			ATPevent.getEvent().getLocation().getPosition().setLatitude((Double)event.getField("eventLatitude_"));
-			ATPevent.getEvent().getLocation().getPosition().setLongitude((Double)event.getField("eventLongitude_"));
-			JsonArray positions = event.getArray("pathData_");
+			ATPevent.getEvent().getLocation().getPosition().setLatitude((Double)event.getField("eventLatitude"));
+			ATPevent.getEvent().getLocation().getPosition().setLongitude((Double)event.getField("eventLongitude"));
+			JsonArray positions = event.getArray("pathData");
 			if (positions != null) {
 				Iterator<Object> it = positions.iterator();
 				while(it.hasNext()) {
 					JsonObject position = (JsonObject) it.next();
 					PositionTrace positionTrace = new PositionTrace();
-					positionTrace.setLatitude(position.getNumber("lat_").doubleValue());
-					positionTrace.setLongitude(position.getNumber("lon_").doubleValue());
+					positionTrace.setLatitude(position.getNumber("latitude").doubleValue());
+					positionTrace.setLongitude(position.getNumber("longitude").doubleValue());
 					ATPevent.getEvent().getLocation().getPositionTraces().add(positionTrace);
 				}
 			}
