@@ -96,25 +96,25 @@ public class Usergrid extends FlowBuilder {
 	}
 
 	private static String USERGRID_CONFIG = "host={{usergrid.host}}&port={{usergrid.port}}&ssl={{usergrid.ssl}}";
-	private static String USERGRID_PATH = "/{{usergrid.org}}/{{usergrid.app}}";
-	private static String SUBSCRIPTIONS = USERGRID_PATH + "/{{subscriptions}}";
-	private static String GET_VEHICLE_FOR_DEVICE = USERGRID_PATH + "/vehicles/${header.vehicleUUID}";
+	private static String USERGRID_PATH = "/{{usergrid.org}}";
+	private static String SUBSCRIPTIONS = "/{{subscriptions}}";
+	private static String GET_VEHICLE_FOR_DEVICE = "/vehicles/${header.vehicleUUID}";
 	private static String GET_OWNER_FOR_DEVICE = SUBSCRIPTIONS + "/${header.subscriptionUUID}/{{subscriptionUserConnection}}";
-	private static String GET_MOTORCLUB_FOR_OWNER = USERGRID_PATH + "/motorclubs/${header.motorclubUUID}";
+	private static String GET_MOTORCLUB_FOR_OWNER = "/motorclubs/${header.motorclubUUID}";
 
 	@Override
 	public void configure() throws Exception {
 
 		fromF("direct:getSubscription")
         .setHeader(Exchange.HTTP_QUERY, simple("ql=select%20*%20where%20deviceId=%27${header.deviceId}%27"))
-        .toF("rest:GET:" + SUBSCRIPTIONS + "?" + USERGRID_CONFIG )
+        .routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.brand}" + SUBSCRIPTIONS + "?" + USERGRID_CONFIG ))
         .process(new RetrieveSubscriptionUUID());
         
         fromF("direct:getVehicle")
         .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Vehicle"))
         .choice()
         .when().simple("${header.vehicleUUID} != null")
-        	.routingSlip(simple("rest:GET:" + GET_VEHICLE_FOR_DEVICE + "?" + USERGRID_CONFIG)).end()
+        	.routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.brand}" + GET_VEHICLE_FOR_DEVICE + "?" + USERGRID_CONFIG)).end()
         .otherwise()
         	.setBody(constant(new byte[]{}))
         .endChoice();
@@ -123,13 +123,13 @@ public class Usergrid extends FlowBuilder {
         .onException(Throwable.class).process(new AggregateOwnerAndMotorClub())
         	.end()
         .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Owner"))
-        .routingSlip(simple("rest:GET:" + GET_OWNER_FOR_DEVICE + "?" + USERGRID_CONFIG))
+        .routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.brand}" + GET_OWNER_FOR_DEVICE + "?" + USERGRID_CONFIG))
         .process(new SaveMotorClubUUID())
         .setProperty("ownerBody", body())
         .setBody(constant(new byte[]{}))
         .choice()
         .when().simple("${header.motorclubUUID} != null")
-        	.routingSlip(simple("rest:GET:" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG)).end()
+        	.routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.brand}" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG)).end()
         .otherwise()
         	.setBody(constant(new byte[]{}))
         .endChoice()

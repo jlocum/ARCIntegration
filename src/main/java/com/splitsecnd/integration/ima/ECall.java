@@ -47,7 +47,8 @@ public class ECall extends FlowBuilder {
 			exchange.getOut().setBody(new byte[] {});
 			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
 			exchange.getOut().removeHeader(Exchange.HTTP_QUERY);
-			exchange.getOut().setHeader("deviceId", URLEncoder.encode(URLEncoder.encode(device.getString("splitsecndId"))));
+			exchange.getOut().setHeader("deviceId", URLEncoder.encode(URLEncoder.encode(device.getObject("splitsecnd").getString("id"))));
+			exchange.getOut().setHeader("brand", device.getObject("brand").getString("name").toLowerCase());
 			
 			logger.info("Setting deviceId header: {} is encoded as {}", device.getString("splitsecndId"), exchange.getOut().getHeader("deviceId"));
 		}
