@@ -52,7 +52,7 @@ repositories {
         username sonatypeUsername
         password sonatypePassword
       }
-      url 'http://ec2-54-198-158-92.compute-1.amazonaws.com/content/groups/public/' }
+      url 'https://nexus.cyberphysicalsystems.io/' }
     mavenLocal()
 }
 dependencies {
@@ -68,7 +68,7 @@ dependencies {
   provided "org.codehaus.groovy:groovy-all:$groovyVersion"
   provided "io.vertx:lang-groovy:$groovyLangModVersion@jar"
 
-  compile("com.nxttxn:vramel-core:1.0.9")
+  compile("com.nxttxn:vramel-core:1.0.18")
   compile("com.splitsecnd:member-core-services:1.0.13-final")
   compile("com.google.protobuf:protobuf-java:2.5.0")
   compile("com.googlecode.protobuf-java-format:protobuf-java-format:1.2")
