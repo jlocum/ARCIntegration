@@ -132,8 +132,7 @@ public class ECall extends FlowBuilder {
 			caller.setFirstname(StringUtils.defaultIfEmpty(deviceOwner.getString("firstName"), "No First Name"));
 			caller.setName(StringUtils.defaultIfEmpty(deviceOwner.getString("lastName"), StringUtils.defaultIfEmpty(deviceOwner.getString("name"), "No Last Name")));
 			caller.setPhoneNumber(device.getString("phoneNumber"));
-			//placeholder
-			caller.setEmail("none@given");
+			caller.setEmail(StringUtils.defaultIfEmpty(deviceOwner.getString("email"), "none@given"));
 			caller.setFavoriteContactMean("TL");
 			call.setCaller(caller);
 			
