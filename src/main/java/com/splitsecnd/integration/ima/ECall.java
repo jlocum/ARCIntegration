@@ -129,7 +129,7 @@ public class ECall extends FlowBuilder {
 			call.setHardwareTimestamp(DateFormatUtils.format(new Date(event.getLong("time")), "yyyy-MM-dd'T'HH:mm:ssZ", TimeZone.getTimeZone("UTC")));
 			
 			Caller caller = new Caller();
-			caller.setFirstname(StringUtils.defaultIfEmpty(deviceOwner.getString("firstName"), "No First Name"));
+			caller.setFirstname(StringUtils.defaultIfEmpty(deviceOwner.getString("firstName"), ""));
 			caller.setName(StringUtils.defaultIfEmpty(deviceOwner.getString("lastName"), StringUtils.defaultIfEmpty(deviceOwner.getString("name"), "No Last Name")));
 			caller.setPhoneNumber(device.getString("phoneNumber"));
 			caller.setEmail(StringUtils.defaultIfEmpty(deviceOwner.getString("email"), "none@given"));
