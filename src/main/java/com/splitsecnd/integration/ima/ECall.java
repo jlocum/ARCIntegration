@@ -159,13 +159,17 @@ public class ECall extends FlowBuilder {
 			IMAcontext.setCrash((event.getInteger("cause") == 1));
 			request.setContextData(IMAcontext);
 			
+			float hdop = 0.0F;
+			if (event.getNumber("hdop") != null) {
+				hdop = event.getNumber("hdop").floatValue();
+			}
 			LocationHeader locationHeader = new LocationHeader();
 			locationHeader.setProjectionSystemCode("1");
-			locationHeader.setLocationConfidence(event.getNumber("hdop").floatValue() > 8 ? "U" : "V");
+			locationHeader.setLocationConfidence(hdop > 8 ? "U" : "V");
 			locationHeader.setAltitudeUnit("M");
 			locationHeader.setGpsAccuracyUnit("M");
 			//hdop * 3m (3m is standard gps error)
-			locationHeader.setGpsAccuracy(Float.toString(event.getNumber("hdop").floatValue() * 3));
+			locationHeader.setGpsAccuracy(Float.toString(hdop * 3));
 			JsonArray positions = event.getArray("pathData");
 			locationHeader.setLastLocationTimestamp(DateFormatUtils.format(new Date(event.getLong("time")), "yyyy-MM-dd'T'HH:mm:ssZ", TimeZone.getTimeZone("UTC")));
 			if (positions != null) {
