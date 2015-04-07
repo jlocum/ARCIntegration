@@ -164,7 +164,7 @@ public class ECall extends FlowBuilder {
 			}
 			LocationHeader locationHeader = new LocationHeader();
 			locationHeader.setProjectionSystemCode("1");
-			locationHeader.setLocationConfidence(hdop > 8 ? "U" : "V");
+			locationHeader.setLocationConfidence(hdop < 8 ? "U" : "V");
 			locationHeader.setAltitudeUnit("M");
 			locationHeader.setGpsAccuracyUnit("M");
 			//hdop * 3m (3m is standard gps error)
