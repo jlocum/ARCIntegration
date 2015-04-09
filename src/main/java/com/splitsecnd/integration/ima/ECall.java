@@ -195,7 +195,7 @@ public class ECall extends FlowBuilder {
 			Contact contact = new Contact();
 			contact.setContact(device.getString("phoneNumber"));
 			contact.setType("TL");
-			contact.setUidEquipement(StringEscapeUtils.escapeXml(device.getObject("splitsecnd").getString("id")));
+			contact.setUidEquipement(device.getString("ein"));
 			call.setInitialContact(contact);
 			
 			SystemInformation sysInfo = new SystemInformation();
