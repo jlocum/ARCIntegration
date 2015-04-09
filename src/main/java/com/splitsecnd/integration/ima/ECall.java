@@ -30,6 +30,7 @@ import com.splitsecnd.integration.ima.model.ContractualContext;
 import com.splitsecnd.integration.ima.model.EcallRequest;
 import com.splitsecnd.integration.ima.model.Location;
 import com.splitsecnd.integration.ima.model.LocationHeader;
+import com.splitsecnd.integration.ima.model.SystemInformation;
 import com.splitsecnd.integration.ima.model.Vehicle;
 import com.splitsecnd.integration.ima.model.VehicleAccidentContext;
 
@@ -122,6 +123,11 @@ public class ECall extends FlowBuilder {
 				vehicle = new JsonObject();
 			}
 			
+			JsonObject crm = deviceOwner.getObject("crm");
+			if (crm != null) {
+				crm = crm.getObject("Bill_To_Contact__r");
+			}
+			
 			Call call = new Call();
 			call.setUidSupplier(event.getLong("id") + "-" + event.getLong("time")); //Put something here
 			call.setSourcePlatformCode(sourcePlatform);
@@ -129,8 +135,8 @@ public class ECall extends FlowBuilder {
 			call.setHardwareTimestamp(DateFormatUtils.format(new Date(event.getLong("time")), "yyyy-MM-dd'T'HH:mm:ssZ", TimeZone.getTimeZone("UTC")));
 			
 			Caller caller = new Caller();
-			caller.setFirstname(StringUtils.defaultIfEmpty(deviceOwner.getString("firstName"), "-"));
-			caller.setName(StringUtils.defaultIfEmpty(deviceOwner.getString("lastName"), StringUtils.defaultIfEmpty(deviceOwner.getString("name"), "No Name")));
+			caller.setFirstname((crm == null) ? StringUtils.defaultIfEmpty(deviceOwner.getString("firstName"), "-") : StringUtils.defaultIfEmpty(crm.getString("FirstName"), "-"));
+			caller.setName((crm == null) ? StringUtils.defaultIfEmpty(deviceOwner.getString("lastName"), StringUtils.defaultIfEmpty(deviceOwner.getString("name"), "No Name")) : StringUtils.defaultIfEmpty(crm.getString("LastName"), "No Name"));
 			caller.setPhoneNumber(device.getString("phoneNumber"));
 			caller.setEmail(StringUtils.defaultIfEmpty(deviceOwner.getString("email"), "none@given"));
 			caller.setFavoriteContactMean("TL");
@@ -156,6 +162,7 @@ public class ECall extends FlowBuilder {
 			
 			VehicleAccidentContext IMAcontext = new VehicleAccidentContext();
 			IMAcontext.setCrash((event.getInteger("cause") == 1));
+			IMAcontext.setMoving((event.getInteger("speed") > 10));
 			request.setContextData(IMAcontext);
 			
 			float hdop = 0.0F;
@@ -187,9 +194,15 @@ public class ECall extends FlowBuilder {
 			Contact contact = new Contact();
 			contact.setContact(device.getString("phoneNumber"));
 			contact.setType("TL");
-			contact.setUidEquipement("-");
+			contact.setUidEquipement(device.getObject("splitsecnd").getString("id"));
 			call.setInitialContact(contact);
 			
+			SystemInformation sysInfo = new SystemInformation();
+			sysInfo.setMake("CyberPhysical Systems");
+			sysInfo.setModel("Generation 1");
+			sysInfo.setOsName("CyberPhysical DeviceOS");
+			sysInfo.setOsVersion(device.getObject("reportedFirmwareVersion").getString("versionString"));
+			call.setSystemInformation(sysInfo);
 /*			EmergencyEvent ATPevent = new EmergencyEvent();
 			ATPevent.getService().setAssistanceType("ECALL");
 			//ATPevent.getService().setProjectCode(projectCode);
