@@ -9,6 +9,7 @@ import java.util.TimeZone;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
@@ -194,7 +195,7 @@ public class ECall extends FlowBuilder {
 			Contact contact = new Contact();
 			contact.setContact(device.getString("phoneNumber"));
 			contact.setType("TL");
-			contact.setUidEquipement(device.getObject("splitsecnd").getString("id"));
+			contact.setUidEquipement(StringEscapeUtils.escapeXml(device.getObject("splitsecnd").getString("id")));
 			call.setInitialContact(contact);
 			
 			SystemInformation sysInfo = new SystemInformation();
