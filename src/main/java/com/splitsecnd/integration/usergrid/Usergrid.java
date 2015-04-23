@@ -107,14 +107,14 @@ public class Usergrid extends FlowBuilder {
 
 		fromF("direct:getSubscription")
         .setHeader(Exchange.HTTP_QUERY, simple("ql=select%20*%20where%20deviceId=%27${header.deviceId}%27"))
-        .routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.brand}" + SUBSCRIPTIONS + "?" + USERGRID_CONFIG ))
+        .routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.usergridApp}" + SUBSCRIPTIONS + "?" + USERGRID_CONFIG ))
         .process(new RetrieveSubscriptionUUID());
         
         fromF("direct:getVehicle")
         .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Vehicle"))
         .choice()
         .when().simple("${header.vehicleUUID} != null")
-        	.routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.brand}" + GET_VEHICLE_FOR_DEVICE + "?" + USERGRID_CONFIG)).end()
+        	.routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.usergridApp}" + GET_VEHICLE_FOR_DEVICE + "?" + USERGRID_CONFIG)).end()
         .otherwise()
         	.setBody(constant(new byte[]{}))
         .endChoice();
@@ -123,13 +123,13 @@ public class Usergrid extends FlowBuilder {
         .onException(Throwable.class).process(new AggregateOwnerAndMotorClub())
         	.end()
         .setProperty(KeyedBodyAggregationStrategy.KEY, constant("Owner"))
-        .routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.brand}" + GET_OWNER_FOR_DEVICE + "?" + USERGRID_CONFIG))
+        .routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.usergridApp}" + GET_OWNER_FOR_DEVICE + "?" + USERGRID_CONFIG))
         .process(new SaveMotorClubUUID())
         .setProperty("ownerBody", body())
         .setBody(constant(new byte[]{}))
         .choice()
         .when().simple("${header.motorclubUUID} != null")
-        	.routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.brand}" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG)).end()
+        	.routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.usergridApp}" + GET_MOTORCLUB_FOR_OWNER + "?" + USERGRID_CONFIG)).end()
         .otherwise()
         	.setBody(constant(new byte[]{}))
         .endChoice()

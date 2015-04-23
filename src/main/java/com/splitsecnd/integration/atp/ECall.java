@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.TimeZone;
 
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.vertx.java.core.json.JsonArray;
@@ -36,7 +37,7 @@ public class ECall extends FlowBuilder {
 			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
 			exchange.getOut().removeHeader(Exchange.HTTP_QUERY);
 			exchange.getOut().setHeader("deviceId", URLEncoder.encode(URLEncoder.encode(device.getObject("splitsecnd").getString("id"))));
-			exchange.getOut().setHeader("brand", device.getObject("brand").getString("name").toLowerCase());
+			exchange.getOut().setHeader("brand", device.getObject("brand"));
 			
 			logger.info("Setting deviceId header: {} is encoded as {}", device.getString("splitsecndId"), exchange.getOut().getHeader("deviceId"));
 		}
@@ -49,6 +50,7 @@ public class ECall extends FlowBuilder {
 		
         fromF("vertxQueue:ATPQueue")
         .log(LoggingLevel.DEBUG, ECall.class.getName(), "[ECall]: ${body}")
+        .setHeader("usergridApp", simple("{{defaults.arc.usergridApp}}"))
         .onException(Exception.class).handled(true).log(LoggingLevel.ERROR, ECall.class.getName(), "Error").end()
         .toF("direct:{{bus-prefix}}/{{auth.service.name}}/getToken")
         .process(new SaveOriginalEvent())
@@ -57,19 +59,26 @@ public class ECall extends FlowBuilder {
         .toF("direct:getVehicle")
         .toF("direct:getOwner")
         .end()
-        .process(new ECallMessageTransformer(getResolvedConfig().getString("arc.project-code")))
-        .toF("rest:POST:{{arc.requestUri}}", 
-        	 getConfigObject("arc.http-connection-config")
-        ).toF("vertx:splitsecnd.dbUpdater");        
+        .process(new ECallMessageTransformer(getResolvedConfig().getString("defaults.arc.project-code")))
+        .choice()
+        .when().simple("${header.brand.configuration.emergencyServiceConfigured} == true")
+        	.routingSlip(
+        		simple("rest:POST:${header.brand.configuration.requestUri}?host=${header.brand.configuration.host}&port=${header.brand.configuration.port}&ssl=${header.brand.configuration.ssl}&username=${header.brand.configuration.username}&password=${header.brand.configuration.password}"))
+        	.end()
+	    .otherwise()
+	        .toF("rest:POST:{{defaults.arc.requestUri}}", 
+	        	 getConfigObject("defaults.arc.http-connection-config"))
+	    .endChoice()
+        .toF("vertx:splitsecnd.dbUpdater");        
 	}
 
 
 	protected class ECallMessageTransformer implements Processor {
 
-		private String projectCode;
+		private String defaultProjectCode;
 		
 		public ECallMessageTransformer(String projectCode) {
-			this.projectCode = projectCode;
+			this.defaultProjectCode = projectCode;
 		}
 		
 		@Override
@@ -77,6 +86,7 @@ public class ECall extends FlowBuilder {
 			KeyedAggregation results = exchange.getIn().getBody(KeyedAggregation.class);
 			JsonObject event = exchange.getProperty("Event",JsonObject.class);
 			JsonObject device = event.getObject("device");
+			JsonObject brand = device.getObject("brand");
 			JsonObject motorClub = null;
 			try {
 				motorClub = results.get("Owner");
@@ -102,7 +112,10 @@ public class ECall extends FlowBuilder {
 			}
 			EmergencyEvent ATPevent = EmergencyEvent.getInstance();
 			ATPevent.getService().setAssistanceType("ECALL");
-			ATPevent.getService().setProjectCode(projectCode);
+			ATPevent.getService().setProjectCode(
+					(brand == null ? defaultProjectCode : 
+						(brand.getObject("configuration") == null ? defaultProjectCode :
+							StringUtils.defaultIfEmpty(brand.getObject("configuration").getString("projectCode"), defaultProjectCode))));
 			ATPevent.getService().setServiceIdentifier(StringUtils.defaultIfEmpty(motorClub.getString("serviceHomeId"),"GB"));
 			ATPevent.getEvent().setActivationMethod("Manual");
 			ATPevent.getEvent().setCallerId(device.getString("phoneNumber"));
@@ -114,7 +127,11 @@ public class ECall extends FlowBuilder {
 			ATPevent.getEvent().getLocation().setHeading(event.getInteger("heading"));
 			ATPevent.getEvent().getLocation().setNumberOfSatellites(event.getInteger("satellites"));
 			ATPevent.getEvent().getLocation().setSpeed(event.getInteger("speed"));
-			ATPevent.getEvent().getLocation().setIsPositionTrustable((event.getNumber("hdop").doubleValue() < 8 ? true : false));	
+			float hdop = 0.0F;
+			if (event.getNumber("hdop") != null) {
+				hdop = event.getNumber("hdop").floatValue();
+			}
+			ATPevent.getEvent().getLocation().setIsPositionTrustable((hdop < 8 ? true : false));	
 			ATPevent.getEvent().getLocation().getPosition().setLatitude((Double)event.getField("eventLatitude"));
 			ATPevent.getEvent().getLocation().getPosition().setLongitude((Double)event.getField("eventLongitude"));
 			JsonArray positions = event.getArray("pathData");

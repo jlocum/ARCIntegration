@@ -11,6 +11,7 @@ import javax.xml.bind.Marshaller;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
 import org.vertx.java.core.json.JsonArray;
@@ -50,7 +51,7 @@ public class ECall extends FlowBuilder {
 			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
 			exchange.getOut().removeHeader(Exchange.HTTP_QUERY);
 			exchange.getOut().setHeader("deviceId", URLEncoder.encode(URLEncoder.encode(device.getObject("splitsecnd").getString("id"))));
-			exchange.getOut().setHeader("brand", device.getObject("brand").getString("name").toLowerCase());
+			exchange.getOut().setHeader("brand", device.getObject("brand"));
 			
 			logger.info("Setting deviceId header: {} is encoded as {}", device.getString("splitsecndId"), exchange.getOut().getHeader("deviceId"));
 		}
@@ -65,6 +66,7 @@ public class ECall extends FlowBuilder {
 		
 		fromF("vertxQueue:IMAQueue")
         .log(LoggingLevel.DEBUG, ECall.class.getName(), "[ECall]: ${body}")
+        .setHeader("usergridApp", simple("{{defaults.ima.usergridApp}}"))
         .onException(Exception.class).handled(true).log(LoggingLevel.ERROR, ECall.class.getName(), "Error").end()
         .toF("direct:{{bus-prefix}}/{{auth.service.name}}/getToken")
         .process(new SaveOriginalEvent())
@@ -73,27 +75,34 @@ public class ECall extends FlowBuilder {
         .toF("direct:getVehicle")
         .toF("direct:getOwner")
         .end()
-        .process(new ECallMessageTransformer(getResolvedConfig().getString("ima.sourcePlatform"),
-        		getResolvedConfig().getString("ima.targetPlatform"),
-        		getResolvedConfig().getString("ima.clientCompanyCode"))
+        .process(new ECallMessageTransformer(getResolvedConfig().getString("defaults.ima.sourcePlatform"),
+        		getResolvedConfig().getString("defaults.ima.targetPlatform"),
+        		getResolvedConfig().getString("defaults.ima.clientCompanyCode"))
         )
-        .toF("rest:POST:{{ima.requestUri}}", 
-        	 getConfigObject("ima.http-connection-config")
-        ).toF("vertx:splitsecnd.dbUpdater");
+        .choice()
+        .when().simple("${header.brand.configuration.emergencyServiceConfigured} == true")
+        	.routingSlip(
+        		simple("rest:POST:${header.brand.configuration.requestUri}?host=${header.brand.configuration.host}&port=${header.brand.configuration.port}&ssl=${header.brand.configuration.ssl}"))
+        	.end()
+	    .otherwise()
+	        .toF("rest:POST:{{defaults.ima.requestUri}}", 
+	        	 getConfigObject("defaults.ima.http-connection-config"))
+	    .endChoice()
+        .toF("vertx:splitsecnd.dbUpdater");
         
 	}
 
 
 	protected class ECallMessageTransformer implements Processor {
 
-		private String sourcePlatform;
-		private String targetPlatform;
-		private String clientCompanyCode;
+		private String defaultSourcePlatform;
+		private String defaultTargetPlatform;
+		private String defaultClientCompanyCode;
 		
 		public ECallMessageTransformer(String sourcePlatform, String targetPlatform, String clientCompanyCode) {
-			this.sourcePlatform = sourcePlatform;
-			this.targetPlatform = targetPlatform;
-			this.clientCompanyCode = clientCompanyCode;
+			this.defaultSourcePlatform = sourcePlatform;
+			this.defaultTargetPlatform = targetPlatform;
+			this.defaultClientCompanyCode = clientCompanyCode;
 		}
 		
 		@Override
@@ -101,6 +110,7 @@ public class ECall extends FlowBuilder {
 			KeyedAggregation results = exchange.getIn().getBody(KeyedAggregation.class);
 			JsonObject event = exchange.getProperty("Event",JsonObject.class);
 			JsonObject device = event.getObject("device");
+			JsonObject brand_config = device.getObject("brand").getObject("configuration");
 			JsonObject aggregate = new JsonObject(new String((byte[]) results.get("Owner")));
 			JsonObject motorClub = null;
 			try {
@@ -131,8 +141,8 @@ public class ECall extends FlowBuilder {
 			
 			Call call = new Call();
 			call.setUidSupplier(event.getLong("id") + "-" + event.getLong("time")); //Put something here
-			call.setSourcePlatformCode(sourcePlatform);
-			call.setTargetPlatformCode(targetPlatform);
+			call.setSourcePlatformCode(StringUtils.defaultIfEmpty((brand_config == null) ? null : brand_config.getString("sourcePlatform"), defaultSourcePlatform));
+			call.setTargetPlatformCode(StringUtils.defaultIfEmpty((brand_config == null) ? null : brand_config.getString("targetPlatform"), defaultTargetPlatform));
 			call.setHardwareTimestamp(DateFormatUtils.format(new Date(event.getLong("time")), "yyyy-MM-dd'T'HH:mm:ssZ", TimeZone.getTimeZone("UTC")));
 			
 			Caller caller = new Caller();
@@ -144,7 +154,7 @@ public class ECall extends FlowBuilder {
 			call.setCaller(caller);
 			
 			ContractualContext context = new ContractualContext();
-			context.setClientCompanyCode(clientCompanyCode);
+			context.setClientCompanyCode(StringUtils.defaultIfEmpty((brand_config == null) ? null : brand_config.getString("companyCode"), defaultClientCompanyCode));
 			//placeholder
 			context.setContractualId("-");
 			call.setContractualContext(context);
