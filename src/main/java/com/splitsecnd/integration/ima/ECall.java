@@ -51,8 +51,7 @@ public class ECall extends FlowBuilder {
 			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
 			exchange.getOut().removeHeader(Exchange.HTTP_QUERY);
 			exchange.getOut().setHeader("deviceId", URLEncoder.encode(URLEncoder.encode(device.getObject("splitsecnd").getString("id"))));
-			exchange.getOut().setHeader("brand", device.getObject("brand"));
-			
+
 			logger.info("Setting deviceId header: {} is encoded as {}", device.getString("splitsecndId"), exchange.getOut().getHeader("deviceId"));
 		}
 
@@ -80,9 +79,9 @@ public class ECall extends FlowBuilder {
         		getResolvedConfig().getString("defaults.ima.clientCompanyCode"))
         )
         .choice()
-        .when().simple("${header.brand.configuration.emergencyServiceConfigured} == true")
+        .when().simple("${header.brand.isConfigured}")
         	.routingSlip(
-        		simple("rest:POST:${header.brand.configuration.requestUri}?host=${header.brand.configuration.host}&port=${header.brand.configuration.port}&ssl=${header.brand.configuration.ssl}"))
+        		simple("rest:POST:${header.brand.requestUri}?host=${header.brand.host}&port=${header.brand.port}&ssl=${header.brand.ssl}"))
         	.end()
 	    .otherwise()
 	        .toF("rest:POST:{{defaults.ima.requestUri}}", 
@@ -240,6 +239,13 @@ public class ECall extends FlowBuilder {
 	        out.setHeader("ein", device.getString("ein"));
 	        out.removeHeader("Authorization");
 	        out.setHeader(Exchange.CONTENT_TYPE, "application/xml");
+			JsonObject brand = device.getObject("brand");
+			BrandConfiguration brandConfig = new BrandConfiguration();
+			if (brand != null) {
+				brandConfig.populate(brand_config);
+			}
+			out.setHeader("brand", brandConfig);
+
 	        exchange.setOut(out);			
 		}
 		
