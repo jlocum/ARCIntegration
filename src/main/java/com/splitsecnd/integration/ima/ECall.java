@@ -80,15 +80,16 @@ public class ECall extends FlowBuilder {
         )
         .choice()
         .when(simple("${header.brand.isConfigured}"))
-        	.routingSlip(
-        		simple("rest:POST:${header.brand.requestUri}?host=${header.brand.host}&port=${header.brand.port}&ssl=${header.brand.ssl}"))
-        	.toF("vertx:splitsecnd.dbUpdater")
-        .endChoice()
+        	.toF("direct:postToConfiguredBrand")
 	    .otherwise()
 	        .toF("rest:POST:{{defaults.ima.requestUri}}", 
 	        	 getConfigObject("defaults.ima.http-connection-config"))
-        	.toF("vertx:splitsecnd.dbUpdater")
-	    .endChoice();
+	    .endChoice()
+    	.toF("vertx:splitsecnd.dbUpdater");
+		
+		fromF("direct:postToConfiguredBrand")
+			.routingSlip(
+        		simple("rest:POST:${header.brand.requestUri}?host=${header.brand.host}&port=${header.brand.port}&ssl=${header.brand.ssl}"));
         
 	}
 
