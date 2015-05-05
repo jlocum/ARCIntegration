@@ -82,7 +82,7 @@ public class ECall extends FlowBuilder {
         .when().simple("${header.brand.isConfigured}")
         	.routingSlip(
         		simple("rest:POST:${header.brand.requestUri}?host=${header.brand.host}&port=${header.brand.port}&ssl=${header.brand.ssl}"))
-        	.end()
+        	.endChoice()
 	    .otherwise()
 	        .toF("rest:POST:{{defaults.ima.requestUri}}", 
 	        	 getConfigObject("defaults.ima.http-connection-config"))
