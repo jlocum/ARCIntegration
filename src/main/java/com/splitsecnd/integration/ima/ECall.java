@@ -78,7 +78,6 @@ public class ECall extends FlowBuilder {
         		getResolvedConfig().getString("defaults.ima.targetPlatform"),
         		getResolvedConfig().getString("defaults.ima.clientCompanyCode"))
         )
-        .setBody(constant(new byte[]{}))
         .choice()
         .when(simple("${header.brand.isConfigured}"))
         	.toF("direct:postToConfiguredBrand")
