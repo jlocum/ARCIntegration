@@ -84,7 +84,7 @@ public class ECall extends FlowBuilder {
 	    .otherwise()
 	        .toF("rest:POST:{{defaults.ima.requestUri}}", 
 	        	 getConfigObject("defaults.ima.http-connection-config"))
-	    .endChoice()
+	    .end()
     	.toF("vertx:splitsecnd.dbUpdater");
 		
 		fromF("direct:postToConfiguredBrand")
