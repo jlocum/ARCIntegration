@@ -79,15 +79,16 @@ public class ECall extends FlowBuilder {
         		getResolvedConfig().getString("defaults.ima.clientCompanyCode"))
         )
         .choice()
-        .when().simple("${header.brand.isConfigured}")
+        .when(simple("${header.brand.isConfigured}"))
         	.routingSlip(
         		simple("rest:POST:${header.brand.requestUri}?host=${header.brand.host}&port=${header.brand.port}&ssl=${header.brand.ssl}"))
-        	.endChoice()
+        	.toF("vertx:splitsecnd.dbUpdater")
+        .endChoice()
 	    .otherwise()
 	        .toF("rest:POST:{{defaults.ima.requestUri}}", 
 	        	 getConfigObject("defaults.ima.http-connection-config"))
-	    .endChoice()
-        .toF("vertx:splitsecnd.dbUpdater");
+        	.toF("vertx:splitsecnd.dbUpdater")
+	    .endChoice();
         
 	}
 
