@@ -80,17 +80,14 @@ public class ECall extends FlowBuilder {
         )
         .choice()
         .when(simple("${header.brand.isConfigured}"))
-        	.toF("direct:postToConfiguredBrand")
+			.routingSlip(
+        		simple("rest:POST:${header.brand.requestUri}?host=${header.brand.host}&port=${header.brand.port}&ssl=${header.brand.ssl}"))
+        	.endChoice()
 	    .otherwise()
 	        .toF("rest:POST:{{defaults.ima.requestUri}}", 
 	        	 getConfigObject("defaults.ima.http-connection-config"))
 	    .end()
-    	.toF("vertx:splitsecnd.dbUpdater");
-		
-		fromF("direct:postToConfiguredBrand")
-			.routingSlip(
-        		simple("rest:POST:${header.brand.requestUri}?host=${header.brand.host}&port=${header.brand.port}&ssl=${header.brand.ssl}"));
-        
+    	.toF("vertx:splitsecnd.dbUpdater");        
 	}
 
 
@@ -233,7 +230,7 @@ public class ECall extends FlowBuilder {
 			ATPevent.getEvent().getVehicle().getVin().setWmi(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(0,3));
 			ATPevent.getEvent().getVehicle().getVin().setVds(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(3,9));
 			ATPevent.getEvent().getVehicle().getVin().setVis(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(9));
-*/			Message out = exchange.getIn().copy();
+*/			Message out = exchange.getOut();
 			//String imaXML = mapper.writeValueAsString(call);
 			String imaXML = generateXML(call);
 	        out.setBody(imaXML);
