@@ -226,7 +226,7 @@ public class ECall extends FlowBuilder {
 			ATPevent.getEvent().getVehicle().getVin().setWmi(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(0,3));
 			ATPevent.getEvent().getVehicle().getVin().setVds(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(3,9));
 			ATPevent.getEvent().getVehicle().getVin().setVis(StringUtils.defaultIfEmpty(vehicle.getString("vin"),"12345678901234567").substring(9));
-*/			Message out = exchange.getOut();
+*/			Message out = exchange.getIn().copy();
 			//String imaXML = mapper.writeValueAsString(call);
 			String imaXML = generateXML(call);
 	        out.setBody(imaXML);
