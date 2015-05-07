@@ -82,7 +82,7 @@ public class ECall extends FlowBuilder {
 		
 		fromF("direct:postToService")
 			.routingSlip(
-        		simple("rest:POST:${property.brand.requestUri}?host=${property.brand.host}&port=${property.brand.port}&ssl=${property.brand.ssl}"))
+        		simple("rest:POST:${property.requestUri}?host=${property.host}&port=${property.port}&ssl=${property.ssl}"))
     	.toF("vertx:splitsecnd.dbUpdater").end();        
 	}
 
@@ -239,7 +239,10 @@ public class ECall extends FlowBuilder {
 			if (brand != null) {
 				brandConfig.populate(brand_config);
 			}
-			exchange.setProperty("brand", brandConfig);
+			exchange.setProperty("requestUri", brandConfig.getRequestUri());
+			exchange.setProperty("host", brandConfig.getHost());
+			exchange.setProperty("port", brandConfig.getPort());
+			exchange.setProperty("ssl", brandConfig.isSsl());
 
 	        exchange.setOut(out);			
 		}
