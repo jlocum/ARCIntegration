@@ -78,6 +78,9 @@ public class ECall extends FlowBuilder {
         		getResolvedConfig().getString("defaults.ima.targetPlatform"),
         		getResolvedConfig().getString("defaults.ima.clientCompanyCode"))
         )
+        .toF("direct:postToService").end();
+		
+		fromF("direct:postToService")
 			.routingSlip(
         		simple("rest:POST:${property.brand.requestUri}?host=${property.brand.host}&port=${property.brand.port}&ssl=${property.brand.ssl}"))
     	.toF("vertx:splitsecnd.dbUpdater").end();        
