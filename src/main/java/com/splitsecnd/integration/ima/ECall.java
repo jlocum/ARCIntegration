@@ -79,7 +79,7 @@ public class ECall extends FlowBuilder {
         		getResolvedConfig().getString("defaults.ima.clientCompanyCode"))
         )
 			.routingSlip(
-        		simple("rest:POST:${header.brand.requestUri}?host=${header.brand.host}&port=${header.brand.port}&ssl=${header.brand.ssl}"))
+        		simple("rest:POST:${property.brand.requestUri}?host=${property.brand.host}&port=${property.brand.port}&ssl=${property.brand.ssl}"))
     	.toF("vertx:splitsecnd.dbUpdater").end();        
 	}
 
@@ -236,7 +236,7 @@ public class ECall extends FlowBuilder {
 			if (brand != null) {
 				brandConfig.populate(brand_config);
 			}
-			out.setHeader("brand", brandConfig);
+			exchange.setProperty("brand", brandConfig);
 
 	        exchange.setOut(out);			
 		}
