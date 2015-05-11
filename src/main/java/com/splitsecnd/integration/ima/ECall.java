@@ -163,6 +163,7 @@ public class ECall extends FlowBuilder {
 			IMAvehicle.setColor(StringUtils.defaultIfEmpty(vehicle.getString("color"), ""));
 			IMAvehicle.setMake(StringUtils.defaultIfEmpty(vehicle.getString("make"), ""));
 			IMAvehicle.setModel(StringUtils.defaultIfEmpty(vehicle.getString("model"), ""));
+			IMAvehicle.setEnergy(StringUtils.defaultIfEmpty(vehicle.getString("fuelType"), "Gasoline"));
 			request.setRequestObject(IMAvehicle);
 			
 			VehicleAccidentContext IMAcontext = new VehicleAccidentContext();
