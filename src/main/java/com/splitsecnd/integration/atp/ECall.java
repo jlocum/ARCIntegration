@@ -63,7 +63,7 @@ public class ECall extends FlowBuilder {
         .choice()
         .when().simple("${header.brand.configuration.emergencyServiceConfigured} == true")
         	.routingSlip(
-        		simple("rest:POST:${header.brand.configuration.requestUri}?host=${header.brand.configuration.host}&port=${header.brand.configuration.port}&ssl=${header.brand.configuration.ssl}&username=${header.brand.configuration.username}&password=${header.brand.configuration.password}"))
+        		simple("rest:POST:${header.brand.configuration.requestUri}?host=${header.brand.configuration.host}&port=${header.brand.configuration.port}&ssl=false&username=${header.brand.configuration.username}&password=${header.brand.configuration.password}"))
         	.end()
 	    .otherwise()
 	        .toF("rest:POST:{{defaults.arc.requestUri}}", 
