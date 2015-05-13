@@ -59,8 +59,8 @@ public class ECall extends FlowBuilder {
         .toF("direct:getVehicle")
         .toF("direct:getOwner")
         .end()
-        .process(new ECallMessageTransformer(getResolvedConfig().getString("defaults.arc.project-code")))
-        .choice()
+        .process(new ECallMessageTransformer(getResolvedConfig().getString("defaults.arc.project-code"))).end();
+/*        .choice()
         .when().simple("${header.brand.configuration.emergencyServiceConfigured} == true")
         	.routingSlip(
         		simple("rest:POST:${header.brand.configuration.requestUri}?host=${header.brand.configuration.host}&port=${header.brand.configuration.port}&ssl=false&username=${header.brand.configuration.username}&password=${header.brand.configuration.password}"))
@@ -69,7 +69,7 @@ public class ECall extends FlowBuilder {
 	        .toF("rest:POST:{{defaults.arc.requestUri}}", 
 	        	 getConfigObject("defaults.arc.http-connection-config"))
 	    .endChoice()
-        .toF("vertx:splitsecnd.dbUpdater");        
+        .toF("vertx:splitsecnd.dbUpdater");     */   
 	}
 
 
