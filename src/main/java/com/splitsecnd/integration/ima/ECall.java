@@ -243,7 +243,7 @@ public class ECall extends FlowBuilder {
 			exchange.setProperty("requestUri", brandConfig.getRequestUri());
 			exchange.setProperty("host", brandConfig.getHost());
 			exchange.setProperty("port", brandConfig.getPort());
-			exchange.setProperty("ssl", brandConfig.isSsl());
+			exchange.setProperty("ssl", String.valueOf(brandConfig.isSsl()));
 
 	        exchange.setOut(out);			
 		}
