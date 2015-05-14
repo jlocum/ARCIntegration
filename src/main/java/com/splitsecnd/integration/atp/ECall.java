@@ -21,6 +21,7 @@ import com.nxttxn.vramel.processor.aggregate.KeyedAggregation;
 import com.nxttxn.vramel.processor.aggregate.KeyedBodyAggregationStrategy;
 import com.splitsecnd.integration.atp.model.EmergencyEvent;
 import com.splitsecnd.integration.atp.model.PositionTrace;
+import com.splitsecnd.integration.ima.BrandConfiguration;
 
 public class ECall extends FlowBuilder {
 	
@@ -37,7 +38,6 @@ public class ECall extends FlowBuilder {
 			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
 			exchange.getOut().removeHeader(Exchange.HTTP_QUERY);
 			exchange.getOut().setHeader("deviceId", URLEncoder.encode(URLEncoder.encode(device.getObject("splitsecnd").getString("id"))));
-			exchange.getOut().setHeader("brand", device.getObject("brand"));
 			
 			logger.info("Setting deviceId header: {} is encoded as {}", device.getString("splitsecndId"), exchange.getOut().getHeader("deviceId"));
 		}
@@ -59,17 +59,13 @@ public class ECall extends FlowBuilder {
         .toF("direct:getVehicle")
         .toF("direct:getOwner")
         .end()
-        .process(new ECallMessageTransformer(getResolvedConfig().getString("defaults.arc.project-code"))).end();
-/*        .choice()
-        .when().simple("${header.brand.configuration.emergencyServiceConfigured} == true")
-        	.routingSlip(
-        		simple("rest:POST:${header.brand.configuration.requestUri}?host=${header.brand.configuration.host}&port=${header.brand.configuration.port}&ssl=false&username=${header.brand.configuration.username}&password=${header.brand.configuration.password}"))
-        	.end()
-	    .otherwise()
-	        .toF("rest:POST:{{defaults.arc.requestUri}}", 
-	        	 getConfigObject("defaults.arc.http-connection-config"))
-	    .endChoice()
-        .toF("vertx:splitsecnd.dbUpdater");     */   
+        .process(new ECallMessageTransformer(getResolvedConfig().getString("defaults.arc.project-code")))
+        .toF("direct:postToService").end();
+		
+		fromF("direct:postToService")
+			.routingSlip(
+        		simple("rest:POST:${property.requestUri}?host=${property.host}&port=${property.port}&ssl=${property.ssl}"))
+    	.toF("vertx:splitsecnd.dbUpdater").end();                
 	}
 
 
@@ -87,6 +83,7 @@ public class ECall extends FlowBuilder {
 			JsonObject event = exchange.getProperty("Event",JsonObject.class);
 			JsonObject device = event.getObject("device");
 			JsonObject brand = device.getObject("brand");
+			JsonObject brand_config = device.getObject("brand").getObject("configuration");
 			JsonObject motorClub = null;
 			try {
 				motorClub = results.get("Owner");
@@ -153,6 +150,14 @@ public class ECall extends FlowBuilder {
 	        out.setBody(atpJson);
 	        exchange.setProperty("eventJson", atpJson);
 	        out.setHeader("ein", device.getString("ein"));
+			BrandConfiguration brandConfig = new BrandConfiguration();
+			if (brand != null) {
+				brandConfig.populate(brand_config);
+			}
+			exchange.setProperty("requestUri", brandConfig.getRequestUri());
+			exchange.setProperty("host", brandConfig.getHost());
+			exchange.setProperty("port", brandConfig.getPort());
+			exchange.setProperty("ssl", String.valueOf(brandConfig.isSsl()));
 	        out.removeHeader("Authorization");
 	        exchange.setOut(out);			
 		}
