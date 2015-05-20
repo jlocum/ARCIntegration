@@ -60,9 +60,9 @@ public class ECall extends FlowBuilder {
         .toF("direct:getOwner")
         .end()
         .process(new ECallMessageTransformer(getResolvedConfig().getString("defaults.arc.project-code")))
-        .toF("direct:postToService").end();
+        .toF("direct:postToATPService").end();
 		
-		fromF("direct:postToService")
+		fromF("direct:postToATPService")
 			.routingSlip(
         		simple("rest:POST:${property.requestUri}?host=${property.host}&port=${property.port}&ssl=${property.ssl}"))
     	.toF("vertx:splitsecnd.dbUpdater").end();                
