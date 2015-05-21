@@ -84,27 +84,24 @@ public class ECall extends FlowBuilder {
 			JsonObject device = event.getObject("device");
 			JsonObject brand = device.getObject("brand");
 			JsonObject brand_config = device.getObject("brand").getObject("configuration");
+			JsonObject aggregate = new JsonObject(new String((byte[]) results.get("Owner")));
 			JsonObject motorClub = null;
 			try {
-				motorClub = results.get("Owner");
-				motorClub = motorClub.getObject("MotorClub");
+				motorClub = getEntity(aggregate.getObject("MotorClub"));
 			} catch( Exception e ) {
 				logger.warn("no motorclub found - must default", e);
 				motorClub = new JsonObject();				
 			}
 			JsonObject deviceOwner = null;
 			try {
-				deviceOwner = results.get("Owner");
-				logger.info("###Owner1: %s", deviceOwner.getFieldNames());
-				deviceOwner = getJson(deviceOwner.getObject("Owner"));
-				logger.info("###Owner2: %s", deviceOwner.getFieldNames());
+				deviceOwner = getEntity(aggregate.getObject("Owner"));
 			} catch( Exception e ) {
 				logger.warn("no owner found - must default", e);
 				deviceOwner = new JsonObject();				
 			}
 			JsonObject vehicle = null;
 			try {
-				vehicle = getJson((byte[])results.get("Vehicle"));
+				vehicle = getEntity((byte[])results.get("Vehicle"));
 			} catch( Exception e ) {
 				logger.warn("no vehicle found - must default", e);
 				vehicle = new JsonObject();
@@ -168,11 +165,12 @@ public class ECall extends FlowBuilder {
 		
 	}
 
-	private JsonObject getJson(byte[] json) throws Exception {
-		return getJson(new JsonObject(new String(json)));
+	private JsonObject getEntity(byte[] json) throws Exception {
+		JsonObject j = new JsonObject(new String(json));
+		return getEntity(j);
 	}
-	
-	private JsonObject getJson(JsonObject json) throws Exception {
+
+	private JsonObject getEntity(JsonObject json) throws Exception {
 		JsonArray entities = json.getArray("entities");
 		if (entities == null || entities.size() == 0) {
 			throw new Exception("No entities for supplied json: " + json.toString());
