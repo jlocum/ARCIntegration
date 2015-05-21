@@ -64,7 +64,7 @@ public class ECall extends FlowBuilder {
 		
 		fromF("direct:postToATPService")
 			.routingSlip(
-        		simple("rest:POST:${property.requestUri}?host=${property.host}&port=${property.port}&ssl=${property.ssl}"))
+        		simple("rest:POST:${property.requestUri}?host=${property.host}&port=${property.port}&ssl=${property.ssl}&username=${property.username}&password=${property.password}"))
     	.toF("vertx:splitsecnd.dbUpdater").end();                
 	}
 
@@ -158,6 +158,8 @@ public class ECall extends FlowBuilder {
 			exchange.setProperty("host", brandConfig.getHost());
 			exchange.setProperty("port", brandConfig.getPort());
 			exchange.setProperty("ssl", String.valueOf(brandConfig.isSsl()));
+			exchange.setProperty("username", brand_config.getString("username"));
+			exchange.setProperty("password", brand_config.getString("password"));
 	        out.removeHeader("Authorization");
 	        exchange.setOut(out);			
 		}
