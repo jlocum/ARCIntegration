@@ -95,7 +95,7 @@ public class ECall extends FlowBuilder {
 			JsonObject deviceOwner = null;
 			try {
 				deviceOwner = results.get("Owner");
-				deviceOwner = deviceOwner.getObject("Owner");
+				deviceOwner = getJson(deviceOwner.getObject("Owner"));
 			} catch( Exception e ) {
 				logger.warn("no owner found - must default", e);
 				deviceOwner = new JsonObject();				
@@ -167,10 +167,13 @@ public class ECall extends FlowBuilder {
 	}
 
 	private JsonObject getJson(byte[] json) throws Exception {
-		JsonObject j = new JsonObject(new String(json));
-		JsonArray entities = j.getArray("entities");
+		return getJson(new JsonObject(new String(json)));
+	}
+	
+	private JsonObject getJson(JsonObject json) throws Exception {
+		JsonArray entities = json.getArray("entities");
 		if (entities == null || entities.size() == 0) {
-			throw new Exception("No entities for supplied json: " + j.toString());
+			throw new Exception("No entities for supplied json: " + json.toString());
 		}
 		
 		return entities.get(0);
