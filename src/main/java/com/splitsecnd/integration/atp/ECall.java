@@ -95,7 +95,9 @@ public class ECall extends FlowBuilder {
 			JsonObject deviceOwner = null;
 			try {
 				deviceOwner = results.get("Owner");
+				logger.info("###Owner1: %s", deviceOwner.getFieldNames());
 				deviceOwner = getJson(deviceOwner.getObject("Owner"));
+				logger.info("###Owner2: %s", deviceOwner.getFieldNames());
 			} catch( Exception e ) {
 				logger.warn("no owner found - must default", e);
 				deviceOwner = new JsonObject();				
