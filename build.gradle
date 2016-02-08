@@ -82,6 +82,7 @@ dependencies {
   provided "io.vertx:lang-groovy:$groovyLangModVersion@jar"
 
   compile("com.nxttxn:vramel-core:1.0.18")
+  compile("com.splitsecnd:member-core-services:1.0.57-final")
   compile("com.google.protobuf:protobuf-java:2.5.0")
   compile("com.googlecode.protobuf-java-format:protobuf-java-format:1.2")
 
