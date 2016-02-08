@@ -67,7 +67,7 @@ public class ECall extends FlowBuilder {
         .log(LoggingLevel.DEBUG, ECall.class.getName(), "[ECall]: ${body}")
         .setHeader("usergridApp", simple("{{defaults.ima.usergridApp}}"))
         .onException(Exception.class).handled(true).log(LoggingLevel.ERROR, ECall.class.getName(), "Error").end()
-        .toF("direct:{{bus-prefix}}/{{auth.service.name}}/getToken")
+        .toF("direct:{{bus-prefix}}/{{auth.service.name}}/usergrid/getToken")
         .process(new SaveOriginalEvent())
         .toF("direct:getSubscription")
         .multicast(new KeyedBodyAggregationStrategy())
