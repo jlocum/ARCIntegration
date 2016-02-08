@@ -106,6 +106,7 @@ public class Usergrid extends FlowBuilder {
 	public void configure() throws Exception {
 
 		fromF("direct:getSubscription")
+		.setHeader("Authorization", simple("Bearer YWMtYsx6Vs64EeWnQbcIdxpU2YAAAVLDIZGx22P95Q5BCQ_V_S9jgPSU3XACZ8Y"))
         .setHeader(Exchange.HTTP_QUERY, simple("ql=select%20*%20where%20deviceId=%27${header.deviceId}%27"))
         .routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.usergridApp}" + SUBSCRIPTIONS + "?" + USERGRID_CONFIG ))
         .process(new RetrieveSubscriptionUUID());
