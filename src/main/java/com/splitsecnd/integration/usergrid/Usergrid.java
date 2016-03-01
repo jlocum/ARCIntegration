@@ -68,6 +68,7 @@ public class Usergrid extends FlowBuilder {
 			exchange.getOut().setBody(new byte[] {});
 			exchange.getOut().setHeaders(exchange.getIn().getHeaders());
 			exchange.getOut().setHeader("subscriptionUUID", subscription.getString("uuid"));
+			exchange.setProperty("fullSubscription", subscription);
 			exchange.getOut().setHeader("vehicleUUID", subscription.getString("vehicleId"));
 			if (StringUtils.isEmpty(subscription.getString("vehicleId"))) {
 				logger.warn("No vehicleId found for {}", exchange.getIn().getHeader("deviceId"));
@@ -106,7 +107,7 @@ public class Usergrid extends FlowBuilder {
 	public void configure() throws Exception {
 
 		fromF("direct:getSubscription")
-		.setHeader("Authorization", simple("Bearer YWMtYsx6Vs64EeWnQbcIdxpU2YAAAVLDIZGx22P95Q5BCQ_V_S9jgPSU3XACZ8Y"))
+		.setHeader("Authorization", simple("Bearer YWMtn_cjGt7sEeWC462Duy2UoIAAAVMtU3fA446pRxpaE3Mc7mewhZldhBxwTWc"))
         .setHeader(Exchange.HTTP_QUERY, simple("ql=select%20*%20where%20deviceId=%27${header.deviceId}%27"))
         .routingSlip(simple("rest:GET:" + USERGRID_PATH + "/${header.usergridApp}" + SUBSCRIPTIONS + "?" + USERGRID_CONFIG ))
         .process(new RetrieveSubscriptionUUID());
